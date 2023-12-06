@@ -1,7 +1,13 @@
 {
     "template": {
-        "header": "tmp.hpp",
-        "source": "tmp.cpp",
+        "header": { 
+            "file": "tmp.hpp", 
+            "include": [ "enum class ItemRole { UNKNOWN, PUNCTUATION, VARIABLE, INFIX, POSTFIX, RESERVED };" ] 
+        },
+        "source": { 
+            "file": "tmp.cpp", 
+            "include": [] 
+        },
         "namespace": "tmp",
         "include-once": "TMP_HPP",
         "names": { "class": "TmpNames", "format": "KW_{0}" },

@@ -190,8 +190,8 @@ class CodeGenerator:
 
     def generateCode( self ):
         jtemplate = self._jdata['template']
-        hfile = jtemplate['header']
-        sfile = jtemplate['source']
+        hfile = jtemplate['header']['file']
+        sfile = jtemplate['source']['file']
         with open( hfile, 'w' ) as f:
             self.generateHeader( f )
         with open( sfile, 'w' ) as f:
@@ -203,6 +203,9 @@ class CodeGenerator:
         print( f"""#define {jtemplate['include-once']}""", file = file )
         print( file = file )
         print( """#include <string>""", file = file )
+        print( file = file )
+        for i in jtemplate['header']['include']:
+            print( i, file = file )
         print( file = file )
         print( f"""namespace {jtemplate['namespace']} {{""", file = file )
         print( file = file )
@@ -242,7 +245,10 @@ class CodeGenerator:
         jtemplate = self._jdata['template']
         print( """#include <string>""", file = file )
         print( file = file )
-        print( f"""#include "{jtemplate['header']}" """, file = file )
+        print( f"""#include "{jtemplate['header']['file']}" """, file = file )
+        print( file = file )
+        for i in jtemplate['source']['include']:
+            print( i, file = file )
         print( file = file )
         print( f"""namespace {jtemplate['namespace']} {{""", file = file )
         print( file = file )
