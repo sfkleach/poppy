@@ -24,20 +24,6 @@ SHELL:=/bin/bash
 ### Main Contents
 ################################################################################
 
-.PHONY: help
-help:
-	# Valid targets are:
-	# 	build			- builds artefacts
-	#	clean			- removes artefacts
-
-.PHONY: build
-build: tmp.o
-	true
-
-.PHONY: clean
-clean:
-	rm -f tmp.o tmp.cpp tmp.hpp
-
 tmp.o: tmp.cpp tmp.hpp
 	g++ -Wall  -std=c++11 -c -o $@ $<
 
