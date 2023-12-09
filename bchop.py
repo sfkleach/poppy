@@ -21,13 +21,18 @@ class Writer:
     def dedent( self ):
         self._indent -= 1
 
-    def writeLine( self, s ):
+    def writeLine( self, *parts ):
+        self.write( *parts )
+        self.newline()
+
+    def write( self, *parts ):
         for i in range( 0, self._indent ):
             print( '    ', end = "", file = self._file )
-        print( s, file = self._file )
+        for s in parts:
+            print( s, end = "", file = self._file )
 
-    def __call__( self, s ):
-        self.writeLine( s )
+    def __call__( self, *parts ):
+        self.writeLine( *parts )
 
     def newline( self ):
         print( file = self._file )
@@ -207,7 +212,7 @@ class CodeGenerator:
 
     def defaultCode( self ):
         code_class = self.name_of_CodeClass()
-        code = self._jdata['defaults']['code']
+        code = self._jdata['default-code']
         return f"{code_class}::{code}"
 
     def name_of_CodeClass( self ):
@@ -218,13 +223,13 @@ class CodeGenerator:
     
     def name_FromKeyToCodeFunction( self ):
         try:
-            return self._jtemplate['function-names']['from-string-to-code']
+            return self._jtemplate['function-names']['from-key-to-code']
         except:
             return None
 
     def name_of_FromCodeToKeyFunction( self ):
         try:
-            return self._jdata['template']['function-names']['code-to-string']
+            return self._jdata['template']['function-names']['from-code-to-key']
         except:
             return None
 
@@ -257,7 +262,7 @@ class CodeGenerator:
                 name = v['key']
                 writer( f"""static const std::string_view {name};""" )
         writer( "}; // class" )
-        writer.newline()
+        writer()
 
     def generateCodeClass( self, writer ):
         codes_classname = self.name_of_CodeClass()
@@ -269,7 +274,7 @@ class CodeGenerator:
                 code = v['code']
                 writer( f"""{code}, """ )      
         writer( "}; // enum" )
-        writer.newline()
+        writer()
 
     def generateInnerHeader( self, writer ):
         self.generateKeysClass( writer )
@@ -279,53 +284,54 @@ class CodeGenerator:
         code_class = self.name_of_CodeClass()
 
         lookup = self.name_LookupFunction()
-        extra_fields = ''.join( f""", {field['type']} {field['name']}""" for field in self._jdata['fields'] )
+        extra_fields = ''.join( f""", {field['type']} & {field['name']}""" for field in self._jdata['fields'] )
 
         writer( f"""bool {lookup}( const std::string & s, {code_class} & code {extra_fields});""" )
-        writer.newline()
+        writer()
         
         if code_to_string := self.name_of_FromCodeToKeyFunction():
             writer( f"""const char * {code_to_string}( {codes_classname} code );""" )
-            writer.newline()
+            writer()
 
         if string_to_code := self.name_FromKeyToCodeFunction():
             writer( f"""{codes_classname} {string_to_code}( const std::string & s );""" )
-            writer.newline()
+            writer()
 
         if has_code := self.name_HasCodeFunction():
             writer( f"""bool {has_code}( const std::string & s );""" )
-            writer.newline()
+            writer()
         
 
     def generateHeader( self, writer ):
         jtemplate = self._jtemplate
         writer( f"""#ifndef {jtemplate['include-once']}""" )
         writer( f"""#define {jtemplate['include-once']}""" )
-        writer.newline()
+        writer()
         writer( """#include <string>""" )
-        writer.newline()
+        writer()
         for i in jtemplate['header']['include']:
             writer( i )
-        writer.newline()
+        writer()
         writer( f"""namespace {jtemplate['namespace']} {{""" )
-        writer.newline()
+        writer()
         
         self.generateInnerHeader( writer )
         
+        writer()
         writer( "} // namespace" )
         writer( """#endif""" )
 
     def generateSource( self, writer ):
         jtemplate = self._jtemplate
         writer( """#include <string>""" )
-        writer.newline()
+        writer()
         writer( f"""#include "{jtemplate['header']['file']}" """ )
-        writer.newline()
+        writer()
         for i in jtemplate['source']['include']:
             writer( i )
-        writer.newline()
+        writer()
         writer( f"""namespace {jtemplate['namespace']} {{""" )
-        writer.newline()
+        writer()
 
         self.generateInnerSource( writer )
 
@@ -336,17 +342,19 @@ class CodeGenerator:
         for k, v in self._jdata['map'].items():
             mod_name = v['key']
             writer( f"""const std::string_view {keys_classname}::{mod_name} {{ \"{k}\" }};""" )      
-        writer.newline()
+        writer()
 
     def generateLookupFunction( self, writer ):
         if lookup := self.name_LookupFunction():
             code_class = self.name_of_CodeClass()
-            extra_fields = ''.join( f""", {field['type']} {field['name']}""" for field in self._jdata['fields'] )
+            extra_fields = ''.join( f""", {field['type']} & {field['name']}""" for field in self._jdata['fields'] )
             writer( f"""bool {lookup}( const std::string & s, {code_class} & code {extra_fields}) {{""" )
             with indent(writer):
                 writer( """size_t len = s.length();""" )
                 dc = self.defaultCode()
                 writer( f"""code = {dc};""" )
+                for extra in self._jdata['fields']:
+                    writer( f"""{extra['name']} = {extra['default']};""" )
                 if self._include_empty:
                     writer( """if ( len == 0 )""" )
                     with indent(writer):
@@ -354,11 +362,11 @@ class CodeGenerator:
                     writer( f"""return {self._include_empty};""" )
                 self._tree.generateCode( writer )
             writer( """}""" )
-            writer.newline()
+            writer()
 
     def generateCodeToStringFunction( self, writer ):
-        codes_classname = self.name_of_CodeClass()
         if code_to_string := self.name_of_FromCodeToKeyFunction():
+            codes_classname = self.name_of_CodeClass()
             writer( f"""const char * {code_to_string}( {codes_classname} code )""" )
             writer( """{""", )
             with indent(writer):
@@ -367,15 +375,47 @@ class CodeGenerator:
                     for k, v in self._jdata['map'].items():
                         code = v['code']
                         writer( f"""case {codes_classname}::{code}: return \"{k}\";""" )
-                    default_name = self._jdata['default']['name']
-                    writer( f"""        default: return \"{default_name}\";""" )
+                    writer( f"""default: return nullptr;""" )
                 writer( """}""" )
             writer( """}""" )
+            writer()
+
+    def generateKeyToCodeFunction( self, writer ):
+        if key_to_code := self.name_FromKeyToCodeFunction():
+            lookup = self.name_LookupFunction()
+            codes_classname = self.name_of_CodeClass()
+            writer( f"""{codes_classname} {key_to_code}( const std::string & key )""" )
+            writer( """{""", )
+            with indent(writer):
+                writer( f"""{codes_classname} code;""" )
+                for extra in self._jdata['fields']:
+                    writer( f"""{extra['type']} {extra['name']};""" )
+                extra_fields = ''.join( f""", {field['name']}""" for field in self._jdata['fields'] )
+                writer( f"""{lookup}( key, code {extra_fields});""" )
+                writer( """return code;""" )
+            writer( """}""" )
+            writer()
+
+    def generateHasCodeFunction( self, writer ):
+        if has_code := self.name_HasCodeFunction():
+            lookup = self.name_LookupFunction()
+            writer( f"""bool {has_code}( const std::string & key )""" )
+            writer( """{""", )
+            with indent(writer):
+                writer( f"""{self.name_of_CodeClass()} code;""" )
+                for extra in self._jdata['fields']:
+                    writer( f"""{extra['type']} {extra['name']};""" )
+                extra_fields = ''.join( f""", {field['name']}""" for field in self._jdata['fields'] )
+                writer( f"""return {lookup}( key, code {extra_fields});""" )
+            writer( """}""" )
+            writer()
 
     def generateInnerSource( self, writer ):
         self.generateNameDefinitions( writer )
         self.generateLookupFunction( writer )
         self.generateCodeToStringFunction( writer )
+        self.generateKeyToCodeFunction( writer )
+        self.generateHasCodeFunction( writer )
 
 
 def main(filename):

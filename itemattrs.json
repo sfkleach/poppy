@@ -2,7 +2,7 @@
     "template": {
         "header": { 
             "file": "tmp.hpp", 
-            "include": [ "enum class ItemRole { UNKNOWN, PUNCTUATION, VARIABLE, INFIX, POSTFIX, RESERVED };" ] 
+            "include": [ "enum class ItemRole { UNKNOWN, PUNCTUATION, PREFIX, VARIABLE, INFIX, POSTFIX, RESERVED };" ] 
         },
         "source": { 
             "file": "tmp.cpp", 
@@ -18,20 +18,17 @@
             "lookup": "lookupTmpToken",
             "has-code": "hasCode",
             "from-key-to-code": "stringToTmpToken",
-            "from-code-to-Key": "tmpTokenToString"
+            "from-code-to-key": "tmpTokenToString"
         }
     },
     "fields": [
         {
             "name": "role",
-            "type": "ItemRole &"
+            "type": "ItemRole",
+            "default": "ItemRole::UNKNOWN"
         }
     ],
-    "defaults" : {
-        "name": "KW_UNKNOWN",
-        "code": "unknown_code",
-        "role": "ItemRole::UNKNOWN"
-    },
+    "default-code" : "unknown_code",
     "enums": [ "unknown_code", "int_code", "float_code", "word_code", "string_code" ],
     "map": {
         "+": { "key": "KW_ADD", "code": "add_code", "role": "ItemRole::INFIX" },
@@ -41,9 +38,7 @@
         "by": { "key": "KW_BY", "code": "by_code", "role": "ItemRole::PUNCTUATION" },
         "case": { "key": "KW_CASE", "code": "case_code", "role": "ItemRole::PUNCTUATION" },
         "catch": { "key": "KW_CATCH", "code": "catch_code", "role": "ItemRole::PUNCTUATION" },
-        "}": { "key": "KW_BRACE_CLOSE", "code": "cbrace_code", "role": "ItemRole::PUNCTUATION" }
-    },
-    "more": {
+        "}": { "key": "KW_BRACE_CLOSE", "code": "cbrace_code", "role": "ItemRole::PUNCTUATION" },
         "]": { "key": "KW_LIST_CLOSE", "code": "cbracket_code", "role": "ItemRole::PUNCTUATION" },
         ":": { "key": "KW_COLON", "code": "colon_code", "role": "ItemRole::PUNCTUATION" },
         ",": { "key": "KW_COMMA", "code": "comma_code", "role": "ItemRole::POSTFIX" },
@@ -107,7 +102,7 @@
         "[%": { "key": "KW_FAT_BRACKET_OPEN", "code": "fat_obracket_code", "role": "ItemRole::PREFIX" },
         "(%": { "key": "KW_FAT_PAREN_OPEN", "code": "fat_oparen_code", "role": "ItemRole::PREFIX" },
         "mod": { "key": "KW_MOD", "code": "mod_code", "role": "ItemRole::INFIX" },
-        "None": { "key": "KW_NONE", "code": "None_code", "role": "ItemRole::VAIABLE" },
+        "None": { "key": "KW_NONE", "code": "None_code", "role": "ItemRole::VARIABLE" },
         "or": { "key": "KW_OR", "code": "or_code", "role": "ItemRole::POSTFIX" },
         "!!!": { "key": "KW_PANIC", "code": "panic_code", "role": "ItemRole::RESERVED" },
         "**": { "key": "KW_POW", "code": "pow_code", "role": "ItemRole::INFIX" },
