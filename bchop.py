@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from typing import List
 from abc import ABC, abstractmethod
 import json
@@ -7,10 +8,12 @@ import sys
 
 class Writer:
 
-    def __init__( self, file, map_info ):
+    def __init__( self, file, class_name, map_info, extra_field_names ):
         self._file = file
         self._indent = 0
         self._map_info = map_info
+        self._class_name = class_name
+        self._extra_field_names = extra_field_names
 
     def indent( self ):
         self._indent += 1
@@ -23,8 +26,24 @@ class Writer:
             print( '    ', end = "", file = self._file )
         print( s, file = self._file )
 
+    def __call__( self, s ):
+        self.writeLine( s )
+
+    def newline( self ):
+        print( file = self._file )
+
     def code( self, x ):
-        return self._map_info[x]['code']
+        return f"""{self._class_name}::{self._map_info[x]['code']}"""
+    
+    def fields( self, x ):
+        for field_name in self._extra_field_names:
+            self( f"""{field_name} = {self._map_info[x][field_name]};""" )
+
+@contextmanager
+def indent( writer: Writer ):
+    writer.indent()
+    yield writer
+    writer.dedent()
 
 class Node( ABC ):
 
@@ -33,7 +52,7 @@ class Node( ABC ):
             print( '    ', end = "", file = file )
     
     @abstractmethod
-    def generateCode( self, *, file, indent: int = 0 ):
+    def generateCode( self, writer: Writer ):
         ...
 
 """This represents a binary chop at a particular character position."""
@@ -45,40 +64,36 @@ class IfThenElse( Node ):
         self._then_part = then_part
         self._else_part = else_part
 
-    def generateCode( self, *, file, indent: int = 0 ):
+    def generateCode( self, writer: Writer ):
         ( i, low_char ) = self._condition
         low_char_in_cpp = low_char if low_char != '\0' else '\\0'
-        self.indent( indent, file = file )
         if i == 0:
-            print( f"""if ( s[{i}] <= '{low_char_in_cpp}' ) {{""", file = file )
+            writer( f"""if ( s[{i}] <= '{low_char_in_cpp}' ) {{""" )
         else:
-            print( f"""if ( len <= {i} || s[{i}] <= '{low_char_in_cpp}' ) {{""", file = file )
-        self._then_part.generateCode( indent = indent + 1, file = file )
-        self.indent( indent, file = file )
-        print( f"""}} else {{""", file = file )
-        self._else_part.generateCode( indent = indent + 1, file = file )
-        self.indent( indent, file = file )
-        print( f"""}}""", file = file )
+            writer( f"""if ( len <= {i} || s[{i}] <= '{low_char_in_cpp}' ) {{""" )
+        with indent(writer):
+            self._then_part.generateCode( writer )
+        writer( f"""}} else {{""" )
+        with indent(writer):
+            self._else_part.generateCode( writer )
+        writer( f"""}}""" )
 
 """This represents a switch on the length of the string."""
 class SwitchOnLength( Node ):
     
-        def __init__( self, cases: dict ):
-            self._cases = cases
-    
-        def generateCode( self, *, file, indent: int = 0 ):
-            self.indent( indent, file = file )
-            print( f"""switch ( len ) {{""", file = file )
-            for k, v in self._cases.items():
-                self.indent( indent + 1, file = file )
-                print( f"""case {k}: {{""", file = file )
-                v.generateCode( indent = indent + 2, file = file )
-                self.indent( indent + 1, file = file )
-                print( f"""}} break;""", file = file )
-            self.indent( indent + 1, file = file )
-            print( f"""default: return false;""", file = file )
-            self.indent( indent, file = file )
-            print( f"""}}""", file = file )
+    def __init__( self, cases: dict ):
+        self._cases = cases
+
+    def generateCode( self, writer: Writer ):
+        writer( f"""switch ( len ) {{""" )
+        for k, v in self._cases.items():
+            with indent(writer):
+                writer( f"""case {k}: {{""" )
+                with indent(writer):
+                    v.generateCode( writer )
+                writer( f"""}} break;""" )
+        writer( f"""default: return false;""" )
+        writer( f"""}}""" )
 
 """
 If this is a single word, we should test for this. Otherwise we failed to 
@@ -89,16 +104,15 @@ class OneOf( Node ):
     def __init__( self, choices: List[ str ] ):
         self._choices = choices
 
-    def generateCode( self, *, file, indent: int = 0 ):
+    def generateCode( self, writer: Writer ):
         for choice in self._choices:
-            self.indent( indent, file = file )
-            print( f"""if ( s == "{choice}" ) {{""", file = file )
-            self.indent( indent, file = file )
-            print( f"""    return true;""", file = file )
-            self.indent( indent, file = file )
-            print( f"""}}""", file = file )
-        self.indent( indent, file = file )
-        print( f"""return false;""", file = file )
+            writer( f"""if ( s == "{choice}" ) {{""" )
+            with indent(writer):
+                writer( f"""code = {writer.code(choice)};""" )
+                writer.fields( choice )
+                writer( f"""return true;""")
+            writer( f"""}}""" )
+        writer( f"""return false;""" )
 
 ### makeTree builds the decision tree for a list of words.
 
@@ -187,25 +201,21 @@ class CodeGenerator:
         self._include_empty = '' in words
 
     def makeWriter( self, file ):
-        return Writer( file, self._jdata['map'] )
+        fields = tuple( field['name'] for field in self._jdata['fields'] )
+        codes_classname = self.name_of_CodeClass()
+        return Writer( file, codes_classname, self._jdata['map'], fields )
 
     def defaultCode( self ):
         code_class = self.name_of_CodeClass()
-        code = self.modCode( self._jdata['defaults']['code'] )
+        code = self._jdata['defaults']['code']
         return f"{code_class}::{code}"
 
     def name_of_CodeClass( self ):
-        return self._jtemplate['codes']['class']
-    
-    def modCode( self, code ):
-        return self._jtemplate['codes']['format'].format( code )
+        return self._jtemplate['class-names']['codes']
 
     def name_of_KeyClass( self ):
-        return self._jtemplate['keys']['class']
+        return self._jtemplate['class-names']['keys']
     
-    def modKey( self, name ):
-        return self._jtemplate['keys']['format'].format( name )
-
     def name_FromKeyToCodeFunction( self ):
         try:
             return self._jtemplate['function-names']['from-string-to-code']
@@ -239,130 +249,138 @@ class CodeGenerator:
         with open( sfile, 'w' ) as f:
             self.generateSource( self.makeWriter(f) )
 
-    def generateKeysClass( self, file ):
+    def generateKeysClass( self, writer ):
         keys_classname = self.name_of_KeyClass()
-        print( f"""class {keys_classname} {{""", file = file )
-        for k, v in self._jdata['map'].items():
-            name = self.modKey( v['key'] )
-            print( f"""    static const std::string_view {name};""", file = file )      
-        print( "}; // class", file = file )
-        print( file = file )
+        writer( f"""class {keys_classname} {{""" )
+        with indent(writer):
+            for k, v in self._jdata['map'].items():
+                name = v['key']
+                writer( f"""static const std::string_view {name};""" )
+        writer( "}; // class" )
+        writer.newline()
 
-    def generateCodeClass( self, file ):
+    def generateCodeClass( self, writer ):
         codes_classname = self.name_of_CodeClass()
-        print( f"""enum class {codes_classname} {{""", file = file )
-        for e in self._jdata['enums']:
-            code = self.modCode(e)
-            print( f"""    {code}, """, file = file )
-        for k, v in self._jdata['map'].items():
-            code = self.modCode( v['code'] )
-            print( f"""    {code}, """, file = file )      
-        print( "}; // enum", file = file )
-        print( file = file )
+        writer( f"""enum class {codes_classname} {{""" )
+        with indent(writer):
+            for e in self._jdata['enums']:
+                writer( f"""{e}, """ )
+            for k, v in self._jdata['map'].items():
+                code = v['code']
+                writer( f"""{code}, """ )      
+        writer( "}; // enum" )
+        writer.newline()
 
-    def generateInnerHeader( self, file ):
-        self.generateKeysClass( file )
-        self.generateCodeClass( file )
+    def generateInnerHeader( self, writer ):
+        self.generateKeysClass( writer )
+        self.generateCodeClass( writer )
 
         codes_classname = self.name_of_CodeClass()
         code_class = self.name_of_CodeClass()
 
         lookup = self.name_LookupFunction()
-        print( f"""bool {lookup}( const std::string & s, {code_class} & code );""", file = file )
-        print( file = file )
+        extra_fields = ''.join( f""", {field['type']} {field['name']}""" for field in self._jdata['fields'] )
+
+        writer( f"""bool {lookup}( const std::string & s, {code_class} & code {extra_fields});""" )
+        writer.newline()
         
         if code_to_string := self.name_of_FromCodeToKeyFunction():
-            print( f"""const char * {code_to_string}( {codes_classname} code );""", file = file )
-            print( file = file )
+            writer( f"""const char * {code_to_string}( {codes_classname} code );""" )
+            writer.newline()
 
         if string_to_code := self.name_FromKeyToCodeFunction():
-            print( f"""{codes_classname} {string_to_code}( const std::string & s );""", file = file )
-            print( file = file )
+            writer( f"""{codes_classname} {string_to_code}( const std::string & s );""" )
+            writer.newline()
 
         if has_code := self.name_HasCodeFunction():
-            print( f"""bool {has_code}( const std::string & s );""", file = file )
-            print( file = file )
+            writer( f"""bool {has_code}( const std::string & s );""" )
+            writer.newline()
         
 
-    def generateHeader( self, file ):
+    def generateHeader( self, writer ):
         jtemplate = self._jtemplate
-        print( f"""#ifndef {jtemplate['include-once']}""", file = file )
-        print( f"""#define {jtemplate['include-once']}""", file = file )
-        print( file = file )
-        print( """#include <string>""", file = file )
-        print( file = file )
+        writer( f"""#ifndef {jtemplate['include-once']}""" )
+        writer( f"""#define {jtemplate['include-once']}""" )
+        writer.newline()
+        writer( """#include <string>""" )
+        writer.newline()
         for i in jtemplate['header']['include']:
-            print( i, file = file )
-        print( file = file )
-        print( f"""namespace {jtemplate['namespace']} {{""", file = file )
-        print( file = file )
+            writer( i )
+        writer.newline()
+        writer( f"""namespace {jtemplate['namespace']} {{""" )
+        writer.newline()
         
-        self.generateInnerHeader( file )
+        self.generateInnerHeader( writer )
         
-        print( "} // namespace", file = file )
-        print( """#endif""", file = file )
+        writer( "} // namespace" )
+        writer( """#endif""" )
 
-    def generateSource( self, file ):
+    def generateSource( self, writer ):
         jtemplate = self._jtemplate
-        print( """#include <string>""", file = file )
-        print( file = file )
-        print( f"""#include "{jtemplate['header']['file']}" """, file = file )
-        print( file = file )
+        writer( """#include <string>""" )
+        writer.newline()
+        writer( f"""#include "{jtemplate['header']['file']}" """ )
+        writer.newline()
         for i in jtemplate['source']['include']:
-            print( i, file = file )
-        print( file = file )
-        print( f"""namespace {jtemplate['namespace']} {{""", file = file )
-        print( file = file )
+            writer( i )
+        writer.newline()
+        writer( f"""namespace {jtemplate['namespace']} {{""" )
+        writer.newline()
 
-        self.generateInnerSource( file )
+        self.generateInnerSource( writer )
 
-        print( "} // namespace", file = file )
+        writer( "} // namespace" )
 
-    def generateNameDefinitions( self, file ):
+    def generateNameDefinitions( self, writer ):
         keys_classname = self.name_of_KeyClass()
         for k, v in self._jdata['map'].items():
-            mod_name = self.modKey( v['key'] )
-            print( f"""const std::string_view {keys_classname}::{mod_name} {{ \"{k}\" }};""", file = file )      
-        print( file = file )
+            mod_name = v['key']
+            writer( f"""const std::string_view {keys_classname}::{mod_name} {{ \"{k}\" }};""" )      
+        writer.newline()
 
-    def generateLookupFunction( self, file ):
+    def generateLookupFunction( self, writer ):
         if lookup := self.name_LookupFunction():
             code_class = self.name_of_CodeClass()
-            print( f"""bool {lookup}( const std::string & s, {code_class} & code ) {{""", file = file )
-            print( """    size_t len = s.length();""", file = file )
-            dc = self.defaultCode()
-            print( f"""    code = {dc};""", file = file )
-            if self._include_empty:
-                print( """    if ( len == 0 )""", file = file )
-                print( f"""        return {self._include_empty};""", file = file )
-            self._tree.generateCode( indent = 1, file = file )
-            print( """}""", file = file )
-            print( file = file )
+            extra_fields = ''.join( f""", {field['type']} {field['name']}""" for field in self._jdata['fields'] )
+            writer( f"""bool {lookup}( const std::string & s, {code_class} & code {extra_fields}) {{""" )
+            with indent(writer):
+                writer( """size_t len = s.length();""" )
+                dc = self.defaultCode()
+                writer( f"""code = {dc};""" )
+                if self._include_empty:
+                    writer( """if ( len == 0 )""" )
+                    with indent(writer):
+                        writer( """return true;""" )
+                    writer( f"""return {self._include_empty};""" )
+                self._tree.generateCode( writer )
+            writer( """}""" )
+            writer.newline()
 
-    def generateCodeToStringFunction( self, file ):
+    def generateCodeToStringFunction( self, writer ):
         codes_classname = self.name_of_CodeClass()
         if code_to_string := self.name_of_FromCodeToKeyFunction():
-            print( f"""const char * {code_to_string}( {codes_classname} code )""", file = file )
-            print( """{""", file = file )
-            print( """    switch ( code ) {""", file = file )
-            for k, v in self._jdata['map'].items():
-                code = self.modCode( v['code'] )
-                print( f"""        case {codes_classname}::{code}: return \"{k}\";""", file = file )
-            default_name = self._jdata['default']['name']
-            print( f"""        default: return \"{default_name}\";""", file = file )
-            print( """    }""", file = file )
-            print( """}""", file = file )
+            writer( f"""const char * {code_to_string}( {codes_classname} code )""" )
+            writer( """{""", )
+            with indent(writer):
+                writer( """switch ( code ) {""" )
+                with indent(writer):
+                    for k, v in self._jdata['map'].items():
+                        code = v['code']
+                        writer( f"""case {codes_classname}::{code}: return \"{k}\";""" )
+                    default_name = self._jdata['default']['name']
+                    writer( f"""        default: return \"{default_name}\";""" )
+                writer( """}""" )
+            writer( """}""" )
 
-    def generateInnerSource( self, file ):
-        self.generateNameDefinitions( file )
-        self.generateLookupFunction( file )
-        self.generateCodeToStringFunction( file )
+    def generateInnerSource( self, writer ):
+        self.generateNameDefinitions( writer )
+        self.generateLookupFunction( writer )
+        self.generateCodeToStringFunction( writer )
 
 
 def main(filename):
     with open( filename, 'r' ) as f:
         jdata = json.load( f )
-        writer = Writer( std., jdata['map'] )
         CodeGenerator( jdata ).generateCode()
 
 if __name__ == "__main__":
