@@ -34,3 +34,5 @@
 # Local
 /a.out
 /.vscode/
+/itemattrs.cpp
+/itemattrs.hpp

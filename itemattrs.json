@@ -1,24 +1,24 @@
 {
     "template": {
         "header": { 
-            "file": "tmp.hpp", 
+            "file": "itemattrs.hpp", 
             "include": [ "enum class ItemRole { UNKNOWN, PUNCTUATION, PREFIX, VARIABLE, INFIX, POSTFIX, RESERVED };" ] 
         },
         "source": { 
-            "file": "tmp.cpp", 
+            "file": "itemattrs.cpp", 
             "include": [] 
         },
-        "namespace": "tmp",
-        "include-once": "TMP_HPP",
+        "namespace": "poppy",
+        "include-once": "ITEMATTRS_HPP",
         "class-names": {
-            "keys": "TmpKeys", 
-            "codes": "TmpCodes"
+            "keys": "ItemKeys", 
+            "codes": "ItemCodes"
         },
         "function-names": {
-            "lookup": "lookupTmpToken",
-            "has-code": "hasCode",
-            "from-key-to-code": "stringToTmpToken",
-            "from-code-to-key": "tmpTokenToString"
+            "lookup": "lookupItemCode",
+            "has-code": "hasItemCode",
+            "from-key-to-code": "itemKeyToItemCode",
+            "from-code-to-key": "itemCodeToItemKey"
         }
     },
     "fields": [
