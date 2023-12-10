@@ -27,6 +27,6 @@ SHELL:=/bin/bash
 itemattrs.o: itemattrs.cpp itemattrs.hpp
 	g++ -Wall  -std=c++11 -c -o $@ $<
 
-itemattrs.cpp itemattrs.hpp: bchop.py itemattrs.json
-	python3 bchop.py itemattrs.json
+itemattrs.cpp itemattrs.hpp: make_cpp_bchop_lookup_fn.py itemattrs.json
+	python3 make_cpp_bchop_lookup_fn.py itemattrs.json
 
