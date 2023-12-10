@@ -1,2 +1,2 @@
 # poppy
-Pop implementation with Python influence implemented in C++
+Pop interpreter, language variant influenced by Python, implemented in C++.
