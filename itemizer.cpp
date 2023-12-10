@@ -1,5 +1,9 @@
 #include "itemizer.hpp"
 
+namespace poppy {
 
-void Itemizer::lex();
-{}
+Item Itemizer::nextItem() {
+    return Item( "hello" );
+}
+
+} // namespace poppy

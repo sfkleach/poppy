@@ -11,8 +11,8 @@
         "namespace": "poppy",
         "include-once": "ITEMATTRS_HPP",
         "class-names": {
-            "keys": "ItemKeys", 
-            "codes": "ItemCodes"
+            "keys": "ItemKey", 
+            "codes": "ItemCode"
         },
         "function-names": {
             "lookup": "lookupItemCode",

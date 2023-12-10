@@ -1,11 +1,10 @@
 #include <cstdlib>
 #include <vector>   
 #include <fstream>
-
-#ifndef POPPY_HPP
-#define POPPY_HPP
-
+#include <iostream>
 #include "itemizer.hpp"
+
+namespace poppy {
 
 typedef void * Ref;
 
@@ -33,7 +32,7 @@ int main(int argc, char **argv) {
     Itemizer itemizer( source );
     while (true) {
         Item item = itemizer.nextItem();
-        if (item.itemType() == ItemType::RESERVED) {
+        if (item.itemCode() == ItemCode::unknown_code) {
             break;
         }
         std::cout << item.nameString() << std::endl;
@@ -41,4 +40,4 @@ int main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-#endif
+} // namespace poppy

@@ -3,7 +3,9 @@
 
 #include <string>
 
-#include "itemtype.hpp"
+#include "itemattrs.hpp"
+
+namespace poppy {
 
 class Item {
 private:
@@ -11,7 +13,7 @@ private:
     
 public:
     ItemCode 				_itemCode;		//	mandatory
-	SyntaxCode 				_syntaxCode;	//	mandatory
+	ItemRole 				_syntaxCode;	//	mandatory
     
 public:
 	std::string & nameString() { return this->_name; }
@@ -20,6 +22,8 @@ public:
 	Item( const char *n );
 
 public:
+	ItemCode itemCode();
+	ItemRole itemRole();
 	bool item_is_neg_num();
 	bool item_is_signed_num();
 	int item_int();
@@ -29,5 +33,7 @@ public:
 	bool item_is_binary();
 	bool item_is_name();
 };
+
+} // namespace poppy
 
 #endif
