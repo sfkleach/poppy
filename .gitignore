@@ -37,3 +37,4 @@
 /itemattrs.cpp
 /itemattrs.hpp
 /poppy
+/dependencies.makefile
