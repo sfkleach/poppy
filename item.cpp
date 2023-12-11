@@ -2,6 +2,11 @@
 
 namespace poppy {
 
+Item::Item() : _name("") {
+    this->_itemCode = ItemCode::unknown_code;
+    this->_syntaxCode = ItemRole::RESERVED;
+}
+
 Item::Item(const char * name) : _name(name) {
     this->_itemCode = ItemCode::unknown_code;
     this->_syntaxCode = ItemRole::RESERVED;

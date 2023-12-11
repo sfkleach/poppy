@@ -14,7 +14,9 @@ private:
 public:
     Itemizer(std::istream & source) : _source(source) {}
     
-    Item nextItem();
+    ~Itemizer();
+
+    bool nextItem(Item & item);
 };
 
 } // namespace poppy

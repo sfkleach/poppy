@@ -1,5 +1,5 @@
 clean:
-    rm -f *.o tmp.cpp tmp.hpp
+    rm -f *.o poppy itemattrs.hpp itemattrs.cpp
 
 build:
-    make itemattrs.o
+    make poppy

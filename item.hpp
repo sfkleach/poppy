@@ -19,6 +19,7 @@ public:
 	std::string & nameString() { return this->_name; }
 	
 public:
+	Item();
 	Item( const char *n );
 
 public:

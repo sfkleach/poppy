@@ -24,20 +24,24 @@ SHELL:=/bin/bash
 ### Main Contents
 ################################################################################
 
-poppy: poppy.o itemizer.o itemattrs.o item.o
-	g++ -Wall -std=c++17 -o $@ $^
+CXXFLAGS=-Wall -g -std=c++17
+CPPFLAGS=
+TARGET_ARCH=
 
-itemizer.o: itemizer.cpp itemizer.hpp item.hpp
-	g++ -Wall  -std=c++17 -c -o $@ $<
+poppy: poppy.o itemizer.o itemattrs.o item.o
+	g++ $(CXXFLAGS) -o $@ $^
+
+poppy.o: poppy.cpp itemizer.hpp item.hpp itemattrs.hpp
+	g++ $(CXXFLAGS) -c -o $@ $<
+
+itemizer.o: itemizer.cpp itemizer.hpp item.hpp itemattrs.hpp
+	g++ $(CXXFLAGS) -c -o $@ $<
+
+item.o: item.cpp item.hpp itemattrs.hpp
+	g++ $(CXXFLAGS)	-c -o $@ $<
 
 itemattrs.o: itemattrs.cpp itemattrs.hpp
-	g++ -Wall  -std=c++17 -c -o $@ $<
-
-item.o: item.cpp item.hpp
-	g++ -Wall  -std=c++17 -c -o $@ $<
-
-item.hpp: itemattrs.hpp
-	true
+	g++ $(CXXFLAGS) -c -o $@ $<
 
 itemattrs.cpp itemattrs.hpp: make_cpp_bchop_lookup_fn.py itemattrs.json
 	python3 make_cpp_bchop_lookup_fn.py itemattrs.json

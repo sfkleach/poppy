@@ -2,8 +2,13 @@
 
 namespace poppy {
 
-Item Itemizer::nextItem() {
-    return Item( "hello" );
+Itemizer::~Itemizer()
+{
+}
+
+bool Itemizer::nextItem(Item & item) {
+    item = Item("hello");
+    return true;
 }
 
 } // namespace poppy

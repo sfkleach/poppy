@@ -2,6 +2,7 @@
 #include <vector>   
 #include <fstream>
 #include <iostream>
+
 #include "itemizer.hpp"
 
 namespace poppy {
@@ -27,17 +28,24 @@ public:
 };
 
 int main(int argc, char **argv) {
+    using namespace poppy;
     Engine engine;
     std::ifstream source( "poem.txt" );
     Itemizer itemizer( source );
-    while (true) {
-        Item item = itemizer.nextItem();
-        if (item.itemCode() == ItemCode::unknown_code) {
-            break;
-        }
+    Item item{""};
+    while (itemizer.nextItem(item)) {
+        // if (item.itemCode() == ItemCode::unknown_code) {
+        //     break;
+        // }
         std::cout << item.nameString() << std::endl;
     }
     return EXIT_SUCCESS;
 }
 
 } // namespace poppy
+
+
+
+int main(int argc, char **argv) {
+    poppy::main(argc, argv);
+}
