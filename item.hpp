@@ -4,6 +4,7 @@
 #include <string>
 
 #include "itemattrs.hpp"
+#include "itemrole.hpp"
 
 namespace poppy {
 
@@ -13,16 +14,16 @@ private:
     
 public:
     ItemCode 				_itemCode;		//	mandatory
-	ItemRole 				_itemRole;		//	mandatory
     
 public:
-	std::string & nameString() { return this->_name; }
+	inline std::string & nameString() { return this->_name; }
 
 public:
 	Item();
-	Item( const std::string & name );
+	Item( const std::string & name, ItemCode code, bool lookup );
 
 public:
+	void lookupCode();
 	ItemCode itemCode();
 	ItemRole itemRole();
 	bool item_is_neg_num();

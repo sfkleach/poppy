@@ -5,6 +5,7 @@
 #include <ios>
 
 #include "itemizer.hpp"
+#include "itemrole.hpp"
 
 
 namespace poppy {
@@ -36,7 +37,7 @@ int main(int argc, char **argv) {
     std::ifstream source( "poem.txt" );
     source.unsetf(std::ios_base::skipws);
     Itemizer itemizer( source );
-    Item item{"foo"};
+    Item item;
     while (itemizer.nextItem(item)) {
         std::cout << item.nameString() << std::endl;
         std::cout << itemRoleToString(item.itemRole()) << std::endl;

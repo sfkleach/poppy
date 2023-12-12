@@ -28,11 +28,11 @@ CXXFLAGS=-Wall -g -std=c++17
 CPPFLAGS=
 TARGET_ARCH=
 
-poppy: poppy.o itemizer.o itemattrs.o item.o
+poppy: poppy.o itemizer.o itemattrs.o item.o itemrole.o
 	g++ $(CXXFLAGS) -o $@ $^
 
 include dependencies.makefile
 
-itemattrs.cpp itemattrs.hpp: make_cpp_bchop_lookup_fn.py itemattrs.json itemrole.*.inc
+itemattrs.cpp itemattrs.hpp: make_cpp_bchop_lookup_fn.py itemattrs.json
 	python3 make_cpp_bchop_lookup_fn.py itemattrs.json
 

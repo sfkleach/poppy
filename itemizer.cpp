@@ -94,11 +94,12 @@ std::optional<Item> Itemizer::nextItem() {
                     sofar << optch.value();
                     skipChar();
                 }
+                return Item(sofar.str(), ItemCode::word_code, true);
             } else {
                 sofar << optch.value();
                 skipChar();
+                return Item(sofar.str(), ItemCode::word_code, true);
             }
-            return Item(sofar.str());
         } else {
             return std::optional<Item>();
         }

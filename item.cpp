@@ -1,23 +1,27 @@
 #include "item.hpp"
 #include "itemattrs.hpp"
+#include "itemrole.hpp"
 
 namespace poppy {
 
 Item::Item() :
     _name(""),
-    _itemCode(ItemCode::unknown_code),
-    _itemRole(ItemRole::UNKNOWN)
+    _itemCode(ItemCode::unknown_code)
 {}
 
-poppy::Item::Item( const std::string & name ) : _name( name ) {
+Item::Item( const std::string & name, ItemCode code, bool lookup ) :
+    _name(name),
+    _itemCode(code)
+{
+    if (lookup) {
+        lookupCode();
+    }
+}
+
+void Item::lookupCode() {
     ItemCode code;
-    ItemRole role;
-    if (lookupItemCode(name, code, role)) {
+    if (lookupItemCode(_name, code)) {
         _itemCode = code;
-        _itemRole = role;
-    } else {
-        _itemCode = ItemCode::unknown_code;
-        _itemRole = ItemRole::UNKNOWN;
     }
 }
 
@@ -26,7 +30,7 @@ ItemCode Item::itemCode() {
 }
 
 ItemRole Item::itemRole() {
-    return this->_itemRole;
+    return itemCodeToItemRole(this->_itemCode);
 }
 
 } // namespace poppy
