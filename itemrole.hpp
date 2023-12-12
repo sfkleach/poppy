@@ -6,7 +6,7 @@
 #include "itemattrs.hpp"
 
 namespace poppy {
-    enum class ItemRole { UNKNOWN, PUNCTUATION, PREFIX, CONSTANT, VARIABLE, INFIX, POSTFIX, RESERVED };
+    enum class ItemRole { UNKNOWN, PUNCTUATION, CONSTANT, VARIABLE, PREFIX, INFIX, POSTFIX, BOTHFIX, RESERVED };
     std::string itemRoleToString(ItemRole role);
     ItemRole itemCodeToItemRole(ItemCode code);
 }

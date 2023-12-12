@@ -20,6 +20,8 @@ namespace poppy {
                 return "INFIX";
             case ItemRole::POSTFIX:
                 return "POSTFIX";
+            case ItemRole::BOTHFIX:
+                return "BOTHFIX";
             case ItemRole::RESERVED:
                 return "RESERVED";
             default:
@@ -30,10 +32,10 @@ namespace poppy {
     ItemRole itemCodeToItemRole(ItemCode code) {
         switch (code) {
             case ItemCode::unknown_code: return ItemRole::UNKNOWN;
-            case ItemCode::int_code: return ItemRole::UNKNOWN;
-            case ItemCode::float_code: return ItemRole::UNKNOWN;
+            case ItemCode::int_code: return ItemRole::CONSTANT;
+            case ItemCode::float_code: return ItemRole::CONSTANT;
             case ItemCode::word_code: return ItemRole::VARIABLE;
-            case ItemCode::string_code: return ItemRole::UNKNOWN;
+            case ItemCode::string_code: return ItemRole::CONSTANT;
             case ItemCode::add_code: return ItemRole::INFIX;
             case ItemCode::and_code: return ItemRole::UNKNOWN;
             case ItemCode::append_code: return ItemRole::UNKNOWN;
@@ -47,17 +49,17 @@ namespace poppy {
             case ItemCode::comma_code: return ItemRole::PUNCTUATION;
             case ItemCode::cparen_code: return ItemRole::PUNCTUATION;
             case ItemCode::fat_cparen_code: return ItemRole::PUNCTUATION;
-            case ItemCode::define_code: return ItemRole::UNKNOWN;
-            case ItemCode::Discard_code: return ItemRole::UNKNOWN;
+            case ItemCode::define_code: return ItemRole::PREFIX;
+            case ItemCode::Discard_code: return ItemRole::VARIABLE;
             case ItemCode::dsemi_code: return ItemRole::UNKNOWN;
             case ItemCode::default_code: return ItemRole::UNKNOWN;
             case ItemCode::div_code: return ItemRole::UNKNOWN;
             case ItemCode::divmod_code: return ItemRole::UNKNOWN;
             case ItemCode::do_code: return ItemRole::UNKNOWN;
             case ItemCode::dot_code: return ItemRole::UNKNOWN;
-            case ItemCode::else_code: return ItemRole::UNKNOWN;
-            case ItemCode::elseif_code: return ItemRole::UNKNOWN;
-            case ItemCode::elseunless_code: return ItemRole::UNKNOWN;
+            case ItemCode::else_code: return ItemRole::PUNCTUATION;
+            case ItemCode::elseif_code: return ItemRole::PUNCTUATION;
+            case ItemCode::elseunless_code: return ItemRole::RESERVED;
             case ItemCode::end_code: return ItemRole::PUNCTUATION;
             case ItemCode::enddefine_code: return ItemRole::PUNCTUATION;
             case ItemCode::enddo_code: return ItemRole::UNKNOWN;
@@ -76,12 +78,12 @@ namespace poppy {
             case ItemCode::fat_cbracket_code: return ItemRole::UNKNOWN;
             case ItemCode::finally_code: return ItemRole::UNKNOWN;
             case ItemCode::fn_code: return ItemRole::UNKNOWN;
-            case ItemCode::for_code: return ItemRole::UNKNOWN;
+            case ItemCode::for_code: return ItemRole::PREFIX;
             case ItemCode::from_code: return ItemRole::UNKNOWN;
             case ItemCode::gt_code: return ItemRole::UNKNOWN;
             case ItemCode::gte_code: return ItemRole::UNKNOWN;
-            case ItemCode::if_code: return ItemRole::UNKNOWN;
-            case ItemCode::in_code: return ItemRole::UNKNOWN;
+            case ItemCode::if_code: return ItemRole::PREFIX;
+            case ItemCode::in_code: return ItemRole::PUNCTUATION;
             case ItemCode::lt_code: return ItemRole::UNKNOWN;
             case ItemCode::lte_code: return ItemRole::UNKNOWN;
             case ItemCode::ltgt_code: return ItemRole::UNKNOWN;
@@ -115,12 +117,12 @@ namespace poppy {
             case ItemCode::slashgt_code: return ItemRole::UNKNOWN;
             case ItemCode::sub_code: return ItemRole::UNKNOWN;
             case ItemCode::switch_code: return ItemRole::UNKNOWN;
-            case ItemCode::Termin_code: return ItemRole::UNKNOWN;
-            case ItemCode::then_code: return ItemRole::UNKNOWN;
+            case ItemCode::Termin_code: return ItemRole::RESERVED;
+            case ItemCode::then_code: return ItemRole::PUNCTUATION;
             case ItemCode::True_code: return ItemRole::CONSTANT;
             case ItemCode::to_code: return ItemRole::UNKNOWN;
-            case ItemCode::unless_code: return ItemRole::UNKNOWN;
-            case ItemCode::until_code: return ItemRole::UNKNOWN;
+            case ItemCode::unless_code: return ItemRole::RESERVED;
+            case ItemCode::until_code: return ItemRole::RESERVED;
             case ItemCode::val_code: return ItemRole::UNKNOWN;
             case ItemCode::var_code: return ItemRole::UNKNOWN;
             case ItemCode::where_code: return ItemRole::UNKNOWN;
