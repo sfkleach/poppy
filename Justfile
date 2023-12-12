@@ -1,6 +1,6 @@
 # Remove all artefacts.
 clean:
-    rm -f *.o poppy itemattrs.hpp itemattrs.cpp dependencies.makefile
+    rm -f *.o poppy itemattrs.hpp itemattrs.cpp dependencies.makefile *.gch
 
 # Build the poppy executable.
 build: _make_dependencies

@@ -2,11 +2,11 @@
     "template": {
         "header": { 
             "file": "itemattrs.hpp", 
-            "include": [ "enum class ItemRole { UNKNOWN, PUNCTUATION, PREFIX, VARIABLE, INFIX, POSTFIX, RESERVED };" ] 
+            "include": [ "#include \"itemrole.hpp.inc\"" ] 
         },
         "source": { 
             "file": "itemattrs.cpp", 
-            "include": [] 
+            "include": [ "#include \"itemrole.cpp.inc\"" ]
         },
         "namespace": "poppy",
         "include-once": "ITEMATTRS_HPP",

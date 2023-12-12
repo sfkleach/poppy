@@ -33,6 +33,6 @@ poppy: poppy.o itemizer.o itemattrs.o item.o
 
 include dependencies.makefile
 
-itemattrs.cpp itemattrs.hpp: make_cpp_bchop_lookup_fn.py itemattrs.json
+itemattrs.cpp itemattrs.hpp: make_cpp_bchop_lookup_fn.py itemattrs.json itemrole.*.inc
 	python3 make_cpp_bchop_lookup_fn.py itemattrs.json
 

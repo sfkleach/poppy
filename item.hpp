@@ -13,14 +13,14 @@ private:
     
 public:
     ItemCode 				_itemCode;		//	mandatory
-	ItemRole 				_syntaxCode;	//	mandatory
+	ItemRole 				_itemRole;		//	mandatory
     
 public:
 	std::string & nameString() { return this->_name; }
-	
+
 public:
 	Item();
-	Item( const char *n );
+	Item( const std::string & name );
 
 public:
 	ItemCode itemCode();

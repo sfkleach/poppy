@@ -1,15 +1,24 @@
 #include "item.hpp"
+#include "itemattrs.hpp"
 
 namespace poppy {
 
-Item::Item() : _name("") {
-    this->_itemCode = ItemCode::unknown_code;
-    this->_syntaxCode = ItemRole::RESERVED;
-}
+Item::Item() :
+    _name(""),
+    _itemCode(ItemCode::unknown_code),
+    _itemRole(ItemRole::UNKNOWN)
+{}
 
-Item::Item(const char * name) : _name(name) {
-    this->_itemCode = ItemCode::unknown_code;
-    this->_syntaxCode = ItemRole::RESERVED;
+poppy::Item::Item( const std::string & name ) : _name( name ) {
+    ItemCode code;
+    ItemRole role;
+    if (lookupItemCode(name, code, role)) {
+        _itemCode = code;
+        _itemRole = role;
+    } else {
+        _itemCode = ItemCode::unknown_code;
+        _itemRole = ItemRole::UNKNOWN;
+    }
 }
 
 ItemCode Item::itemCode() {
@@ -17,7 +26,7 @@ ItemCode Item::itemCode() {
 }
 
 ItemRole Item::itemRole() {
-    return this->_syntaxCode;
+    return this->_itemRole;
 }
 
 } // namespace poppy

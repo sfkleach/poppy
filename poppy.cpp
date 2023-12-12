@@ -2,8 +2,10 @@
 #include <vector>   
 #include <fstream>
 #include <iostream>
+#include <ios>
 
 #include "itemizer.hpp"
+
 
 namespace poppy {
 
@@ -30,14 +32,14 @@ public:
 int main(int argc, char **argv) {
     using namespace poppy;
     Engine engine;
+    
     std::ifstream source( "poem.txt" );
+    source.unsetf(std::ios_base::skipws);
     Itemizer itemizer( source );
-    Item item{""};
+    Item item{"foo"};
     while (itemizer.nextItem(item)) {
-        // if (item.itemCode() == ItemCode::unknown_code) {
-        //     break;
-        // }
         std::cout << item.nameString() << std::endl;
+        std::cout << itemRoleToString(item.itemRole()) << std::endl;
     }
     return EXIT_SUCCESS;
 }
