@@ -95,6 +95,16 @@ std::optional<Item> Itemizer::nextItem() {
                     skipChar();
                 }
                 return Item(sofar.str(), ItemCode::word_code, true);
+            } else if (isdigit(ch)) {
+                while ((optch = peekChar()) and (optch.value() == '_' or isdigit(optch.value()))) {
+                    if (optch.value() == '_') {
+                        skipChar();
+                    } else {
+                        sofar << optch.value();
+                        skipChar();
+                    }
+                }
+                return Item(sofar.str(), ItemCode::int_code, true);
             } else {
                 sofar << optch.value();
                 skipChar();

@@ -39,7 +39,7 @@ class Writer:
 
     def code( self, x ):
         return f"""{self._class_name}::{self._map_info[x]['code']}"""
-    
+ 
     def fields( self, x ):
         for field_name in self._extra_field_names:
             self( f"""{field_name} = {self._map_info[x][field_name]};""" )

@@ -6,23 +6,12 @@
 
 #include "itemizer.hpp"
 #include "itemrole.hpp"
+#include "cell.hpp"
 
 
 namespace poppy {
 
-typedef void * Ref;
 
-class Cell {
-public:
-    union {
-        int64_t i64;
-        uint64_t u64;
-        struct {
-            int64_t payload : 61;
-            unsigned int tag : 3;
-        };
-    } cell;
-};
 
 class Engine {
 public:
@@ -40,6 +29,8 @@ int main(int argc, char **argv) {
     Item item;
     while (itemizer.nextItem(item)) {
         std::cout << item.nameString() << std::endl;
+        const char * k = itemCodeToItemKey(item.itemCode());
+        std::cout << (k == nullptr ? "?" : k) << std::endl;
         std::cout << itemRoleToString(item.itemRole()) << std::endl;
     }
     return EXIT_SUCCESS;

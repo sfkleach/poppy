@@ -1,5 +1,5 @@
 
 
 def foo(x):
-    x + 1
+    x + 1_001
 end
