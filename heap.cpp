@@ -1,4 +1,3 @@
-#include <cstdlib>
 #include <stdexcept>
 
 #include "heap.hpp"
@@ -18,13 +17,25 @@ Heap::Heap()
 }
 
 Builder::Builder(Heap & heap, Cell key) : 
-    _heap(heap),
-    _object(heap._top)
+    _heap(heap)
 {
+    _codelist.push_back(key);
+    _key_offset = 0;
+}
+
+void Builder::addCell(Cell cell) {
+    _codelist.push_back(cell);
 }
 
 Cell * Builder::object() {
-    return _object;
+    if (_heap._top + _codelist.size() >= _heap._data + _heap._capacity) {
+        throw std::runtime_error("Heap overflow");
+    }
+    Cell * obj = _heap._top + _key_offset;
+    for (auto cell : _codelist) {
+        *_heap._top++ = cell;
+    }
+    return obj;
 }
 
 

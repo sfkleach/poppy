@@ -1,5 +1,5 @@
 #ifndef HEAP_HPP
-#define HEAP_HPP
+#define HEAP_HPP    
 
 #include <vector>
 
@@ -23,7 +23,8 @@ public:
 class Builder {
 private:
     Heap & _heap;
-    Cell * _object;
+    size_t _key_offset = 0;
+    std::vector<Cell> _codelist;
 
 public:
     Builder(Heap & heap, Cell key);
