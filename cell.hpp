@@ -7,6 +7,8 @@
 namespace poppy {
 
 typedef void * Ref;
+typedef class Ident * RefIdent;
+
 
 enum class Tag {
     Small,          // 000 61-bit signed integer
@@ -30,24 +32,26 @@ enum class KeyTag {
 
 class Cell {
 public:
-    union {
+    union __attribute__((packed, aligned(8))) {
         Ref ref;
+        RefIdent refIdent;
         int64_t i64;
         uint64_t u64;
-        struct {
-            int64_t payload : 61;
-            unsigned int tag : 3;
-        } tagged;
-        struct {
-            int64_t payload : 56;
-            unsigned int wideTag : 8;
-        } special;
     };
 
 public:
-    inline Tag getTag() const { return (Tag)tagged.tag; }
-    inline UpperTag getUpperTag() const { return (UpperTag)(special.wideTag >> 3); }
-    inline unsigned char getWideTag() const { return special.wideTag; }
+    inline static Cell makeSmall(int64_t value) {
+        return Cell{ .i64 = ( value << 3 ) };
+    }
+
+    inline static Cell makeRefIdent(RefIdent idref) {
+        return Cell{ .refIdent = idref };
+    }
+    
+public:
+    inline Tag getTag() const { return (Tag)(u64 & 0x7); }
+    inline UpperTag getUpperTag() const { return (UpperTag)((u64 & 0xFF) >> 3); }
+    inline unsigned char getWideTag() const { return u64 & 0xFF; }
 
 
 public:
@@ -59,6 +63,14 @@ public:
     inline bool isProcedureKey() const { 
         return u64 == ProcedureTag;
     }
+};
+
+class Ident {
+private:
+    class Cell _value;
+public:
+    Ident(Cell value) : _value(value) {}
+    inline Cell & value() { return _value; }
 };
 
 }

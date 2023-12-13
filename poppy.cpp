@@ -5,6 +5,7 @@
 #include <ios>
 #include <map>
 
+
 #include "itemizer.hpp"
 #include "itemrole.hpp"
 #include "cell.hpp"
@@ -15,10 +16,13 @@
 namespace poppy {
 
 enum class Instruction {
+    POP_GLOBAL,
     PUSHS,
     PUSHQ,
     HALT
 };
+
+
 
 class Engine {
     friend class CodePlanter;
@@ -26,6 +30,16 @@ private:
     std::map<Instruction, void *> _opcode_map;
     std::vector<Cell> _valueStack;
     Heap _heap;
+    std::map<std::string, RefIdent> _symbolTable;
+
+public:
+    void declareGlobal(const std::string & name) {
+        if (_symbolTable.find(name) != _symbolTable.end()) {
+            std::cerr << "Redeclaring global: " << name << std::endl;
+        }
+        Ident * ident = new Ident(Cell::makeSmall(0));
+        _symbolTable[name] = ident;
+    }
 
 private:
     void init_or_run(Cell * pc, bool init) {
@@ -35,6 +49,7 @@ private:
         // in scope while we populate the map.
         if (init) {
             _opcode_map = {
+                {Instruction::POP_GLOBAL, &&L_POP_GLOBAL},
                 {Instruction::PUSHS, &&L_PUSHS},
                 {Instruction::PUSHQ, &&L_PUSHQ},
                 {Instruction::HALT, &&L_HALT}
@@ -51,7 +66,14 @@ private:
         }
 
         pc += 1; // Skip the procedure header (just the key for now).
-        goto *pc->ref;
+        goto *pc++->ref;
+
+        L_POP_GLOBAL:
+            Cell c = _valueStack.back();
+            _valueStack.pop_back();
+            Ident * ident = (pc++)->refIdent;
+            ident->value() = c;
+            goto *(pc++->ref);
 
         L_PUSHQ:
             _valueStack.push_back(*pc++);
@@ -68,6 +90,9 @@ private:
 
 public:
     void initialise() {
+        if (sizeof(Cell) != 8) {
+            throw std::runtime_error("Cell is not 8 bytes");
+        }
         init_or_run(nullptr, true);
     }
 
@@ -75,6 +100,13 @@ public:
         init_or_run(pc, false);
     }
 
+public:
+    void debugDisplay() {
+        std::cout << "Dictionary" << std::endl;
+        for (auto & [name, ident] : _symbolTable) {
+            std::cout << name << " = " << ident->value().u64 << std::endl;
+        }
+    }
 };
 
 class CodePlanter {
@@ -88,14 +120,31 @@ public:
         _builder(engine._heap, Cell{ .u64 = Cell::ProcedureTag })
     {
     }
+
 public:
     void addInstruction(Instruction inst) {
         Ref label_addr = _engine._opcode_map[inst];
         _builder.addCell(Cell{ .ref = label_addr });
     }
 
+    void addData(Cell cell) {
+        _builder.addCell(cell);
+    }
+
     Cell * procedure() {
         return _builder.object();
+    }
+
+public:
+    void addGlobal(const std::string & name) {
+        if (_engine._symbolTable.find(name) == _engine._symbolTable.end()) {
+            std::cerr << "Global not declared: " << name << std::endl;
+        }
+        _builder.addCell(Cell::makeRefIdent(_engine._symbolTable[name]));
+    }
+
+    void declareGlobal(const std::string & name) {
+        _engine.declareGlobal(name);
     }
 };
 
@@ -116,10 +165,17 @@ int main(int argc, char **argv) {
     }
 
     CodePlanter planter(engine);
+    planter.declareGlobal("x");
+    planter.addInstruction(Instruction::PUSHQ);
+    planter.addData(Cell::makeSmall(100));
+    planter.addInstruction(Instruction::POP_GLOBAL);
+    planter.addGlobal("x");
     planter.addInstruction(Instruction::HALT);
     Cell * pc = planter.procedure();
 
     engine.run(pc);
+
+    engine.debugDisplay();
 
     return EXIT_SUCCESS;
 }
