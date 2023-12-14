@@ -86,10 +86,9 @@ private:
         goto *pc++->ref;
 
         L_POP_GLOBAL: {
-            Cell c = _valueStack.back();
-            _valueStack.pop_back();
             Ident * ident = (pc++)->refIdent;
-            ident->value() = c;
+            ident->value() = _valueStack.back();
+            _valueStack.pop_back();
             goto *(pc++->ref);
         }
 
@@ -106,24 +105,28 @@ private:
             goto *(pc++->ref);
         }
 
-        L_PUSHQ:
+        L_PUSHQ: {
             _valueStack.push_back(*pc++);
             goto *(pc++->ref);
+        }
 
-        L_PUSHS:
+        L_PUSHS: {
             _valueStack.push_back(_valueStack.back());
             goto *(pc++->ref);
+        }
 
-        L_RETURN:
+        L_RETURN: {
             pc = _callStack.back().refCell;
             _callStack.pop_back();
             currentProcedure = _callStack.back().refCell;
             _callStack.pop_back();
             goto *(pc++->ref);
+        }
 
-        L_HALT:
+        L_HALT: {
             if ( DEBUG ) std::cout << "DONE!" << std::endl;
-            return;            
+            return;
+        }
     }
 
 public:
