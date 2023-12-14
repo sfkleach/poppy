@@ -10,6 +10,7 @@
 #include "itemrole.hpp"
 #include "cell.hpp"
 #include "heap.hpp"
+#include "mishap.hpp"
 
 #define DEBUG 1
 
@@ -99,9 +100,14 @@ private:
         }
 
         L_ADD: {
-            int64_t a = _valueStack.back().i64;
+            Cell a = _valueStack.back();
             _valueStack.pop_back();
-            _valueStack.back() = Cell{ .i64 = ( _valueStack.back().i64 + a ) };
+            Cell b =_valueStack.back();
+            if (a.isSmall() && b.isSmall()) { 
+                _valueStack.back() = Cell{ .i64 = ( a.i64 + b.i64 ) };
+            } else {
+                throw Mishap("Cannot add non-small values");
+            }
             goto *(pc++->ref);
         }
 

@@ -64,6 +64,9 @@ public:
     inline bool isProcedureKey() const { 
         return u64 == ProcedureTag;
     }
+
+public:
+    inline bool isSmall() const { return getTag() == Tag::Small; }
 };
 
 class Ident {
