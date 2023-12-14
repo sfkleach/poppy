@@ -204,11 +204,13 @@ public:
         _builder.addCell(Cell::makeRefIdent(_engine._symbolTable[name]));
     }
 
-    void declareGlobal(const std::string & name) {
+
+
+public:
+    void GLOBAL(const std::string & name) {
         _engine.declareGlobal(name);
     }
 
-public:
     void PUSH_GLOBAL(const std::string & name) {
         addInstruction(Instruction::PUSH_GLOBAL);
         addGlobal(name);
@@ -262,7 +264,7 @@ int main(int argc, char **argv) {
     }
 
     CodePlanter planter(engine);
-    planter.declareGlobal("x");
+    planter.GLOBAL("x");
     planter.PUSHQ(100);
     planter.POP_GLOBAL("x");
     planter.PUSH_GLOBAL("x");
