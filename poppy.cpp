@@ -16,10 +16,13 @@
 namespace poppy {
 
 enum class Instruction {
+    ADD,
+    HALT,
     POP_GLOBAL,
-    PUSHS,
+    PUSH_GLOBAL,
     PUSHQ,
-    HALT
+    PUSHS,
+    RETURN,
 };
 
 
@@ -28,9 +31,16 @@ class Engine {
     friend class CodePlanter;
 private:
     std::map<Instruction, void *> _opcode_map;
+    Cell _exit_code[1];
+
+private:
     std::vector<Cell> _valueStack;
-    Heap _heap;
+    
+    Cell * currentProcedure;
+    std::vector<Cell> _callStack;
+
     std::map<std::string, RefIdent> _symbolTable;
+    Heap _heap;
 
 public:
     void declareGlobal(const std::string & name) {
@@ -49,11 +59,15 @@ private:
         // in scope while we populate the map.
         if (init) {
             _opcode_map = {
+                {Instruction::ADD, &&L_ADD},
+                {Instruction::HALT, &&L_HALT},
                 {Instruction::POP_GLOBAL, &&L_POP_GLOBAL},
-                {Instruction::PUSHS, &&L_PUSHS},
+                {Instruction::PUSH_GLOBAL, &&L_PUSH_GLOBAL},
                 {Instruction::PUSHQ, &&L_PUSHQ},
-                {Instruction::HALT, &&L_HALT}
+                {Instruction::PUSHS, &&L_PUSHS},
+                {Instruction::RETURN, &&L_RETURN},
             };
+            _exit_code[0] = Cell{ .ref = &&L_HALT };
             return;
         }
 
@@ -65,15 +79,32 @@ private:
             throw std::runtime_error("Not a procedure");
         }
 
+        currentProcedure = pc;
+        _callStack.push_back( Cell{ .ref = nullptr } );
+        _callStack.push_back( Cell{ .refCell = &_exit_code[0] } );
         pc += 1; // Skip the procedure header (just the key for now).
         goto *pc++->ref;
 
-        L_POP_GLOBAL:
+        L_POP_GLOBAL: {
             Cell c = _valueStack.back();
             _valueStack.pop_back();
             Ident * ident = (pc++)->refIdent;
             ident->value() = c;
             goto *(pc++->ref);
+        }
+
+        L_PUSH_GLOBAL: {
+            Ident * ident = (pc++)->refIdent;
+            _valueStack.push_back(ident->value());
+            goto *(pc++->ref);
+        }
+
+        L_ADD: {
+            int64_t a = _valueStack.back().i64;
+            _valueStack.pop_back();
+            _valueStack.back() = Cell{ .i64 = ( _valueStack.back().i64 + a ) };
+            goto *(pc++->ref);
+        }
 
         L_PUSHQ:
             _valueStack.push_back(*pc++);
@@ -81,6 +112,13 @@ private:
 
         L_PUSHS:
             _valueStack.push_back(_valueStack.back());
+            goto *(pc++->ref);
+
+        L_RETURN:
+            pc = _callStack.back().refCell;
+            _callStack.pop_back();
+            currentProcedure = _callStack.back().refCell;
+            _callStack.pop_back();
             goto *(pc++->ref);
 
         L_HALT:
@@ -170,7 +208,14 @@ int main(int argc, char **argv) {
     planter.addData(Cell::makeSmall(100));
     planter.addInstruction(Instruction::POP_GLOBAL);
     planter.addGlobal("x");
-    planter.addInstruction(Instruction::HALT);
+    planter.addInstruction(Instruction::PUSH_GLOBAL);
+    planter.addGlobal("x");
+    planter.addInstruction(Instruction::PUSHQ);
+    planter.addData(Cell::makeSmall(1));
+    planter.addInstruction(Instruction::ADD);
+    planter.addInstruction(Instruction::POP_GLOBAL);
+    planter.addGlobal("x");
+    planter.addInstruction(Instruction::RETURN);
     Cell * pc = planter.procedure();
 
     engine.run(pc);

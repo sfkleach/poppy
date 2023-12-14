@@ -35,6 +35,7 @@ public:
     union __attribute__((packed, aligned(8))) {
         Ref ref;
         RefIdent refIdent;
+        Cell * refCell;
         int64_t i64;
         uint64_t u64;
     };
