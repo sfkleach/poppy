@@ -18,7 +18,8 @@
             "lookup": "lookupItemCode",
             "has-code": "hasItemCode",
             "from-key-to-code": "itemKeyToItemCode",
-            "from-code-to-key": "itemCodeToItemKey"
+            "from-code-to-key": "itemCodeToItemKey",
+            "from-code-to-string": "itemCodeToString"
         }
     },
     "fields": [],

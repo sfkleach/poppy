@@ -232,6 +232,12 @@ class CodeGenerator:
             return self._jdata['template']['function-names']['from-code-to-key']
         except:
             return None
+        
+    def name_of_FromCodeToStringFunction( self ):
+        try:
+            return self._jdata['template']['function-names']['from-code-to-string']
+        except:
+            return None
 
     def name_LookupFunction( self ):
         try:
@@ -289,7 +295,11 @@ class CodeGenerator:
         writer( f"""bool {lookup}( const std::string & s, {code_class} & code {extra_fields});""" )
         writer()
         
-        if code_to_string := self.name_of_FromCodeToKeyFunction():
+        if code_to_key := self.name_of_FromCodeToKeyFunction():
+            writer( f"""const char * {code_to_key}( {codes_classname} code );""" )
+            writer()
+
+        if code_to_string := self.name_of_FromCodeToStringFunction():
             writer( f"""const char * {code_to_string}( {codes_classname} code );""" )
             writer()
 
@@ -364,10 +374,10 @@ class CodeGenerator:
             writer( """}""" )
             writer()
 
-    def generateCodeToStringFunction( self, writer ):
-        if code_to_string := self.name_of_FromCodeToKeyFunction():
+    def generateCodeToKeyFunction( self, writer ):
+        if code_to_key := self.name_of_FromCodeToKeyFunction():
             codes_classname = self.name_of_CodeClass()
-            writer( f"""const char * {code_to_string}( {codes_classname} code )""" )
+            writer( f"""const char * {code_to_key}( {codes_classname} code )""" )
             writer( """{""", )
             with indent(writer):
                 writer( """switch ( code ) {""" )
@@ -375,10 +385,28 @@ class CodeGenerator:
                     for k, v in self._jdata['map'].items():
                         code = v['code']
                         writer( f"""case {codes_classname}::{code}: return \"{k}\";""" )
-                    writer( f"""default: return nullptr;""" )
+                    writer( """default: return nullptr;""" )
                 writer( """}""" )
             writer( """}""" )
             writer()
+
+    def generateCodeToStringFunction( self, writer ):
+        if code_to_string := self.name_of_FromCodeToStringFunction():
+            codes_classname = self.name_of_CodeClass()
+            writer( f"""const char * {code_to_string}( {codes_classname} code )""" )
+            writer( """{""", )
+            with indent(writer):
+                writer( """switch ( code ) {""" )
+                with indent(writer):
+                    for k in self._jdata['enums']:
+                        writer( f"""case {codes_classname}::{k}: return \"{k}\";""" )
+                    for k, v in self._jdata['map'].items():
+                        code = v['code']
+                        writer( f"""case {codes_classname}::{code}: return \"{code}\";""" )
+                    writer( """default: return nullptr;""" )
+                writer( """}""" )
+            writer( """}""" )
+            writer() 
 
     def generateKeyToCodeFunction( self, writer ):
         if key_to_code := self.name_FromKeyToCodeFunction():
@@ -413,6 +441,7 @@ class CodeGenerator:
     def generateInnerSource( self, writer ):
         self.generateNameDefinitions( writer )
         self.generateLookupFunction( writer )
+        self.generateCodeToKeyFunction( writer )
         self.generateCodeToStringFunction( writer )
         self.generateKeyToCodeFunction( writer )
         self.generateHasCodeFunction( writer )
