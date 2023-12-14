@@ -24,6 +24,7 @@ enum class Instruction {
     PUSHQ,
     PUSHS,
     RETURN,
+    SUB,
 };
 
 
@@ -67,6 +68,7 @@ private:
                 {Instruction::PUSHQ, &&L_PUSHQ},
                 {Instruction::PUSHS, &&L_PUSHS},
                 {Instruction::RETURN, &&L_RETURN},
+                {Instruction::SUB, &&L_SUB},
             };
             _exit_code[0] = Cell{ .ref = &&L_HALT };
             return;
@@ -100,13 +102,25 @@ private:
         }
 
         L_ADD: {
-            Cell a = _valueStack.back();
+            Cell b = _valueStack.back();
             _valueStack.pop_back();
-            Cell b =_valueStack.back();
+            Cell a =_valueStack.back();
             if (a.isSmall() && b.isSmall()) { 
                 _valueStack.back() = Cell{ .i64 = ( a.i64 + b.i64 ) };
             } else {
                 throw Mishap("Cannot add non-small values");
+            }
+            goto *(pc++->ref);
+        }
+
+        L_SUB: {
+            Cell b = _valueStack.back();
+            _valueStack.pop_back();
+            Cell a =_valueStack.back();
+            if (a.isSmall() && b.isSmall()) { 
+                _valueStack.back() = Cell{ .i64 = ( a.i64 - b.i64 ) };
+            } else {
+                throw Mishap("Cannot subtract non-small values");
             }
             goto *(pc++->ref);
         }
@@ -193,6 +207,42 @@ public:
     void declareGlobal(const std::string & name) {
         _engine.declareGlobal(name);
     }
+
+public:
+    void PUSH_GLOBAL(const std::string & name) {
+        addInstruction(Instruction::PUSH_GLOBAL);
+        addGlobal(name);
+    }
+
+    void POP_GLOBAL(const std::string & name) {
+        addInstruction(Instruction::POP_GLOBAL);
+        addGlobal(name);
+    }
+
+    void PUSHQ(int64_t i) {
+        addInstruction(Instruction::PUSHQ);
+        addData(Cell::makeSmall(i));
+    }
+
+    void ADD() {
+        addInstruction(Instruction::ADD);
+    }
+
+    void SUB() {
+        addInstruction(Instruction::SUB);
+    }
+
+    void RETURN() {
+        addInstruction(Instruction::RETURN);
+    }
+
+    void HALT() {
+        addInstruction(Instruction::HALT);
+    }
+
+    void PUSHS() {
+        addInstruction(Instruction::PUSHS);
+    }
 };
 
 int main(int argc, char **argv) {
@@ -213,18 +263,13 @@ int main(int argc, char **argv) {
 
     CodePlanter planter(engine);
     planter.declareGlobal("x");
-    planter.addInstruction(Instruction::PUSHQ);
-    planter.addData(Cell::makeSmall(100));
-    planter.addInstruction(Instruction::POP_GLOBAL);
-    planter.addGlobal("x");
-    planter.addInstruction(Instruction::PUSH_GLOBAL);
-    planter.addGlobal("x");
-    planter.addInstruction(Instruction::PUSHQ);
-    planter.addData(Cell::makeSmall(1));
-    planter.addInstruction(Instruction::ADD);
-    planter.addInstruction(Instruction::POP_GLOBAL);
-    planter.addGlobal("x");
-    planter.addInstruction(Instruction::RETURN);
+    planter.PUSHQ(100);
+    planter.POP_GLOBAL("x");
+    planter.PUSH_GLOBAL("x");
+    planter.PUSHQ(1);
+    planter.SUB();
+    planter.POP_GLOBAL("x");
+    planter.RETURN();
     Cell * pc = planter.procedure();
 
     engine.run(pc);
