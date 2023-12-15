@@ -11,6 +11,7 @@
 #include "cell.hpp"
 #include "heap.hpp"
 #include "mishap.hpp"
+#include "layout.hpp"
 
 #define DEBUG 1
 
@@ -19,6 +20,8 @@ namespace poppy {
 enum class Instruction {
     ADD,
     HALT,
+    MUL,
+    PASSIGN,
     POP_GLOBAL,
     PUSH_GLOBAL,
     PUSHQ,
@@ -63,6 +66,8 @@ private:
             _opcode_map = {
                 {Instruction::ADD, &&L_ADD},
                 {Instruction::HALT, &&L_HALT},
+                {Instruction::MUL, &&L_MUL},
+                {Instruction::PASSIGN, &&L_PASSIGN},
                 {Instruction::POP_GLOBAL, &&L_POP_GLOBAL},
                 {Instruction::PUSH_GLOBAL, &&L_PUSH_GLOBAL},
                 {Instruction::PUSHQ, &&L_PUSHQ},
@@ -85,8 +90,15 @@ private:
         currentProcedure = pc;
         _callStack.push_back( Cell{ .ref = nullptr } );
         _callStack.push_back( Cell{ .refCell = &_exit_code[0] } );
-        pc += 1; // Skip the procedure header (just the key for now).
+        pc += ProcedureLayout::InstructionsOffset; // Skip the procedure header.
         goto *pc++->ref;
+
+        L_PASSIGN: {
+            Ident * ident = (pc++)->refIdent;
+            Cell proc{ *pc++ };
+            ident->value() = proc;
+            goto *(pc++->ref);
+        }
 
         L_POP_GLOBAL: {
             Ident * ident = (pc++)->refIdent;
@@ -121,6 +133,18 @@ private:
                 _valueStack.back() = Cell{ .i64 = ( a.i64 - b.i64 ) };
             } else {
                 throw Mishap("Cannot subtract non-small values");
+            }
+            goto *(pc++->ref);
+        }
+
+        L_MUL: {
+            Cell b = _valueStack.back();
+            _valueStack.pop_back();
+            Cell a =_valueStack.back();
+            if (a.isSmall() && b.isSmall()) { 
+                _valueStack.back() = Cell{ .i64 = ( a.i64 * b.i64 ) };
+            } else {
+                throw Mishap("Cannot multiply non-small values");
             }
             goto *(pc++->ref);
         }
@@ -161,6 +185,17 @@ public:
         init_or_run(pc, false);
     }
 
+    void run(const std::string & main) {
+        Ident * idptr = _symbolTable[main];
+        Ident id = *idptr;
+        Cell m = id.value();
+        if (m.isProcedure()) {
+            run(m.deref());
+        } else {
+            throw Mishap("Trying to call non-procedure").culprit("Entry point", main);
+        }
+    }
+
 public:
     void debugDisplay() {
         std::cout << "Dictionary" << std::endl;
@@ -174,12 +209,19 @@ class CodePlanter {
 private:
     Engine & _engine;
     Builder _builder;
+    size_t _before_instructions;
+    PlaceHolder _length{nullptr};
 
 public:
     CodePlanter(Engine & engine) : 
         _engine(engine),
-        _builder(engine._heap, Cell{ .u64 = Cell::ProcedureTag })
+        _builder(engine._heap)
     {
+        _builder.addCell(Cell{});
+        _length = _builder.placeHolder();
+        _builder.addKey(Cell{ .u64 = Cell::ProcedureTag });
+        _builder.addCell(Cell::makeSmall(0));                   //  #locals
+        _before_instructions = _builder.size();
     }
 
 public:
@@ -192,10 +234,6 @@ public:
         _builder.addCell(cell);
     }
 
-    Cell * procedure() {
-        return _builder.object();
-    }
-
 public:
     void addGlobal(const std::string & name) {
         if (_engine._symbolTable.find(name) == _engine._symbolTable.end()) {
@@ -205,12 +243,19 @@ public:
     }
 
 
-
 public:
-    void GLOBAL(const std::string & name) {
+    void global(const std::string & name) {
         _engine.declareGlobal(name);
     }
 
+    void buildAndBind(const std::string & name) {
+        size_t after_instructions = _builder.size();
+        _length.setCell( Cell::makeSmall( after_instructions - _before_instructions ) );
+        Cell * c = _builder.object();
+        _engine._symbolTable[name]->value() = Cell::makePtr(c);
+    }
+
+public:
     void PUSH_GLOBAL(const std::string & name) {
         addInstruction(Instruction::PUSH_GLOBAL);
         addGlobal(name);
@@ -264,17 +309,20 @@ int main(int argc, char **argv) {
     }
 
     CodePlanter planter(engine);
-    planter.GLOBAL("x");
+    planter.global( "x" );
+
     planter.PUSHQ(100);
-    planter.POP_GLOBAL("x");
-    planter.PUSH_GLOBAL("x");
+    planter.POP_GLOBAL( "x" );
+    planter.PUSH_GLOBAL( "x" );
     planter.PUSHQ(1);
     planter.SUB();
-    planter.POP_GLOBAL("x");
+    planter.POP_GLOBAL( "x" );
     planter.RETURN();
-    Cell * pc = planter.procedure();
+    
+    planter.global( "main" );
+    planter.buildAndBind( "main" );
 
-    engine.run(pc);
+    engine.run( "main" );
 
     engine.debugDisplay();
 
@@ -288,3 +336,4 @@ int main(int argc, char **argv) {
 int main(int argc, char **argv) {
     poppy::main(argc, argv);
 }
+

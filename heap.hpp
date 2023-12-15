@@ -27,11 +27,25 @@ private:
     std::vector<Cell> _codelist;
 
 public:
-    Builder(Heap & heap, Cell key);
+    Builder(Heap & heap);
 
 public:
     Cell * object();
     void addCell(Cell cell);
+    void addKey(Cell cell);
+    class PlaceHolder placeHolder();
+    size_t size();
+};
+
+class PlaceHolder {
+private:
+    Cell * _cell;
+
+public:
+    PlaceHolder(Cell * cell) : _cell(cell) {}
+
+public:
+    void setCell(Cell cell);
 };
 
 
