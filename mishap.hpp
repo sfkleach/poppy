@@ -60,7 +60,6 @@ public:
 	bool isSystemError() { return this->mishap_severity == SYSTEM_ERROR_SEVERITY; }
 
 	void report();
-	void gnxReport();
 	
 	std::string getMessage();
 	std::pair< std::string, std::string > & getCulprit( int n );

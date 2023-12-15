@@ -52,6 +52,10 @@ public:
     inline static Cell makePtr( Cell * ptr ) {
         return Cell{ .u64 = ((uint64_t)ptr | (int)Tag::FreePtr) };
     }
+
+    inline static Cell makeU64( uint64_t n ) {
+        return Cell{ .u64 = n };
+    }
     
 public:
     inline Tag getTag() const { return (Tag)(u64 & 0x7); }

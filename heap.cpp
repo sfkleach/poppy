@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <iostream>
 
 #include "heap.hpp"
 #include "mishap.hpp"
@@ -46,17 +47,21 @@ Cell * Builder::object() {
     return result;
 }
 
-PlaceHolder Builder::placeHolder() {
+PlaceHolder Builder::placeHolderJustPlanted() {
     if (_codelist.size() > 0 ) {
-        return PlaceHolder{ &_codelist.back() };
+        return PlaceHolder{ &_codelist, static_cast<int>(_codelist.size()) - 1 };
     } else {
         throw Mishap("No cell planted");
     }
 }
 
-void PlaceHolder::setCell(Cell cell) {
-    *_cell = cell;
-}
 
+void Builder::debugDisplay() {
+    int n = 0;
+    for (auto c : _codelist) {
+        std::cout << n++ << ". " << c.u64 << std::endl;
+    }
+    std::cout << std::endl;
+}
 
 } // namespace poppy

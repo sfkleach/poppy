@@ -23,7 +23,9 @@ enum class Instruction {
     MUL,
     PASSIGN,
     POP_GLOBAL,
+    POP_LOCAL,
     PUSH_GLOBAL,
+    PUSH_LOCAL,
     PUSHQ,
     PUSHS,
     RETURN,
@@ -69,7 +71,9 @@ private:
                 {Instruction::MUL, &&L_MUL},
                 {Instruction::PASSIGN, &&L_PASSIGN},
                 {Instruction::POP_GLOBAL, &&L_POP_GLOBAL},
+                {Instruction::POP_LOCAL, &&L_POP_LOCAL},
                 {Instruction::PUSH_GLOBAL, &&L_PUSH_GLOBAL},
+                {Instruction::PUSH_LOCAL, &&L_PUSH_LOCAL},
                 {Instruction::PUSHQ, &&L_PUSHQ},
                 {Instruction::PUSHS, &&L_PUSHS},
                 {Instruction::RETURN, &&L_RETURN},
@@ -90,8 +94,12 @@ private:
         }
 
         currentProcedure = pc;
+        uint64_t nlocals = (currentProcedure + ProcedureLayout::NumLocalsOffset)->u64;
         _callStack.push_back( Cell{ .ref = nullptr } );     // Dummy.
         _callStack.push_back( Cell{ .refCell = &_exit_code[0] } );
+        if (nlocals != 0) {
+            _callStack.resize(_callStack.size() + nlocals, Cell::makeSmall(0));
+        }
         pc += ProcedureLayout::InstructionsOffset;          // Skip the procedure header.
         goto *pc++->ref;
 
@@ -109,9 +117,24 @@ private:
             goto *(pc++->ref);
         }
 
+        L_POP_LOCAL: {
+            uint64_t n = pc++->u64;
+            Cell * c = &_callStack.back() - n;
+            *c = _valueStack.back();
+            _valueStack.pop_back();
+            goto *(pc++->ref);
+        }
+
         L_PUSH_GLOBAL: {
             Ident * ident = (pc++)->refIdent;
             _valueStack.push_back(ident->value());
+            goto *(pc++->ref);
+        }
+
+        L_PUSH_LOCAL: {
+            uint64_t n = pc++->u64;
+            Cell * c = &_callStack.back() - n;
+            _valueStack.push_back(*c);
             goto *(pc++->ref);
         }
 
@@ -144,7 +167,7 @@ private:
             _valueStack.pop_back();
             Cell a =_valueStack.back();
             if (a.isSmall() && b.isSmall()) { 
-                _valueStack.back() = Cell{ .i64 = ( a.i64 * b.i64 ) };
+                _valueStack.back() = Cell{ .i64 = ( ( a.i64 >> 3 ) * b.i64 ) };
             } else {
                 throw Mishap("Cannot multiply non-small values");
             }
@@ -162,6 +185,10 @@ private:
         }
 
         L_RETURN: {
+            uint64_t nlocals = (currentProcedure + ProcedureLayout::NumLocalsOffset)->u64;
+            if (nlocals != 0) {
+                _callStack.resize( _callStack.size() - nlocals );
+            }
             pc = _callStack.back().refCell;
             _callStack.pop_back();
             currentProcedure = _callStack.back().refCell;
@@ -200,6 +227,11 @@ public:
 
 public:
     void debugDisplay() {
+        std::cout << "Value Stack (Bottom to Top)" << std::endl;
+        for ( auto & c : _valueStack ) {
+            std::cout << c.u64 << std::endl;
+        }
+        std::cout << std::endl;
         std::cout << "Dictionary" << std::endl;
         for (auto & [name, ident] : _symbolTable) {
             std::cout << name << " = " << ident->value().u64 << std::endl;
@@ -212,7 +244,14 @@ private:
     Engine & _engine;
     Builder _builder;
     size_t _before_instructions;
-    PlaceHolder _length{nullptr};
+    PlaceHolder _length;
+    PlaceHolder _num_locals;
+
+    //  Locals
+    std::vector<std::string> locals;
+    int scope_level = 0;
+    size_t max_level = 0;
+    std::vector<PlaceHolder> local_fixups;
 
 public:
     CodePlanter(Engine & engine) : 
@@ -220,9 +259,10 @@ public:
         _builder(engine._heap)
     {
         _builder.addCell(Cell{});
-        _length = _builder.placeHolder();
+        _length = _builder.placeHolderJustPlanted();
         _builder.addKey(Cell{ .u64 = Cell::ProcedureTag });
-        _builder.addCell(Cell::makeSmall(0));                   //  #locals
+        _builder.addCell(Cell::makeSmall(0));                   //  num locals
+        _num_locals = _builder.placeHolderJustPlanted();
         _before_instructions = _builder.size();
     }
 
@@ -236,16 +276,42 @@ public:
         _builder.addCell(cell);
     }
 
-public:
+    void addRawUInt(uint64_t n) {
+        _builder.addCell( Cell{ .u64 = n } );
+    }
+
     void addGlobal(const std::string & name) {
         if (_engine._symbolTable.find(name) == _engine._symbolTable.end()) {
             std::cerr << "Global not declared: " << name << std::endl;
         }
         _builder.addCell(Cell::makeRefIdent(_engine._symbolTable[name]));
     }
-
+    
+    void addLocal(const std::string & varname) {
+        for (int i = locals.size(); i > 0; i--) {
+            if (locals[i-1] == varname) {
+                addRawUInt(i);  // This needs to become max_level - i.
+                PlaceHolder p = _builder.placeHolderJustPlanted();
+                local_fixups.push_back(p);
+                return;
+            }
+        }
+        throw Mishap("Unknown local variable").culprit("Variable", varname);
+    }
 
 public:
+    void local(const std::string & name) {
+        for (int i = locals.size(); i > scope_level; i--) {
+            if (locals[i-1] == name) {
+                throw Mishap("Redeclaring local in the same scope").culprit("Local", name);
+            }
+        }
+        locals.push_back(name);
+        if (locals.size() > max_level) {
+            max_level = locals.size();
+        }
+    }
+
     void global(const std::string & name) {
         _engine.declareGlobal(name);
     }
@@ -253,6 +319,15 @@ public:
     void buildAndBind(const std::string & name) {
         size_t after_instructions = _builder.size();
         _length.setCell( Cell::makeSmall( after_instructions - _before_instructions ) );
+        _num_locals.setCell( Cell::makeU64(max_level) );
+
+        // Fix up the local variable offsets.
+        for (auto & p : local_fixups) {
+            uint64_t n = p.getCell().u64;
+            uint64_t new_n = max_level - n;
+            p.setCell( Cell{ .u64 = new_n } );
+        }
+
         Cell * c = _builder.object();
         _engine._symbolTable[name]->value() = Cell::makePtr(c);
     }
@@ -263,9 +338,19 @@ public:
         addGlobal(name);
     }
 
+    void PUSH_LOCAL(const std::string & name) {
+        addInstruction(Instruction::PUSH_LOCAL);
+        addLocal(name);
+    }
+
     void POP_GLOBAL(const std::string & name) {
         addInstruction(Instruction::POP_GLOBAL);
         addGlobal(name);
+    }
+
+    void POP_LOCAL(const std::string & name) {
+        addInstruction(Instruction::POP_LOCAL);
+        addLocal(name);
     }
 
     void PUSHQ(int64_t i) {
@@ -279,6 +364,10 @@ public:
 
     void SUB() {
         addInstruction(Instruction::SUB);
+    }
+
+    void MUL() {
+        addInstruction(Instruction::MUL);
     }
 
     void RETURN() {
@@ -296,39 +385,48 @@ public:
 
 int main(int argc, char **argv) {
     using namespace poppy;
-    Engine engine;
-    engine.initialise();
-    
-    std::ifstream source( "poem.txt" );
-    source.unsetf(std::ios_base::skipws);
-    Itemizer itemizer( source );
-    Item item;
-    while (itemizer.nextItem(item)) {
-        std::cout << item.nameString() << std::endl;
-        const char * k = itemCodeToItemKey(item.itemCode());
-        std::cout << (k == nullptr ? "?" : k) << std::endl;
-        std::cout << itemRoleToString(item.itemRole()) << std::endl;
+
+    try {
+
+        Engine engine;
+        engine.initialise();
+        
+        std::ifstream source( "poem.txt" );
+        source.unsetf(std::ios_base::skipws);
+        Itemizer itemizer( source );
+        Item item;
+        while (itemizer.nextItem(item)) {
+            std::cout << item.nameString() << std::endl;
+            const char * k = itemCodeToItemKey(item.itemCode());
+            std::cout << (k == nullptr ? "?" : k) << std::endl;
+            std::cout << itemRoleToString(item.itemRole()) << std::endl;
+        }
+
+        CodePlanter planter(engine);
+        planter.local( "x" );
+
+        planter.PUSHQ(100);
+        planter.POP_LOCAL( "x" );
+        planter.PUSH_LOCAL( "x" );
+        planter.PUSHQ(2);
+        planter.MUL();
+        // planter.POP_LOCAL( "x" );
+        planter.PUSHS();
+        planter.RETURN();
+        
+        planter.global( "main" );
+        planter.buildAndBind( "main" );
+
+        engine.run( "main" );
+
+        engine.debugDisplay();
+
+        return EXIT_SUCCESS;
+
+    } catch (Mishap & mex) {
+        mex.report();
+        return EXIT_FAILURE;
     }
-
-    CodePlanter planter(engine);
-    planter.global( "x" );
-
-    planter.PUSHQ(100);
-    planter.POP_GLOBAL( "x" );
-    planter.PUSH_GLOBAL( "x" );
-    planter.PUSHQ(1);
-    planter.SUB();
-    planter.POP_GLOBAL( "x" );
-    planter.RETURN();
-    
-    planter.global( "main" );
-    planter.buildAndBind( "main" );
-
-    engine.run( "main" );
-
-    engine.debugDisplay();
-
-    return EXIT_SUCCESS;
 }
 
 } // namespace poppy

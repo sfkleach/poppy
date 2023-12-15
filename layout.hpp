@@ -4,6 +4,7 @@
 class ProcedureLayout {
 public:
     static const int LengthOffset = -1;
+    static const int NumLocalsOffset = 1;
     static const int InstructionsOffset = 2;
 };
 

@@ -24,6 +24,8 @@ class Builder {
 private:
     Heap & _heap;
     size_t _key_offset = 0;
+
+public:
     std::vector<Cell> _codelist;
 
 public:
@@ -33,19 +35,26 @@ public:
     Cell * object();
     void addCell(Cell cell);
     void addKey(Cell cell);
-    class PlaceHolder placeHolder();
+    class PlaceHolder placeHolderJustPlanted();
     size_t size();
+    void debugDisplay();
 };
 
 class PlaceHolder {
 private:
-    Cell * _cell;
+    int _offset;
+    std::vector<Cell> * _codelist;
 
 public:
-    PlaceHolder(Cell * cell) : _cell(cell) {}
+    PlaceHolder() : _offset(0), _codelist(nullptr) {}
+    PlaceHolder(std::vector<Cell> * codelist, int offset) : 
+        _offset(offset),
+        _codelist(codelist)
+    {}
 
 public:
-    void setCell(Cell cell);
+    inline void setCell(Cell cell) { (*_codelist)[_offset] = cell; }
+    inline Cell getCell() { return (*_codelist)[_offset]; }
 };
 
 
