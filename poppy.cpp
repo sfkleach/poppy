@@ -143,7 +143,13 @@ private:
             _valueStack.pop_back();
             Cell a =_valueStack.back();
             if (a.isSmall() && b.isSmall()) { 
-                _valueStack.back() = Cell{ .i64 = ( a.i64 + b.i64 ) };
+                int64_t r;
+                if (__builtin_add_overflow(a.i64, b.i64, &r)) {
+                    //  TODO: fix culprit for cells.
+                    throw Mishap("Integer overflow trapped").culprit("Arg #1", a.i64).culprit("Arg #2", b.i64);
+                } else {
+                    _valueStack.back() = Cell{ .i64 = r };
+                }
             } else {
                 throw Mishap("Cannot add non-small values");
             }
@@ -155,7 +161,13 @@ private:
             _valueStack.pop_back();
             Cell a =_valueStack.back();
             if (a.isSmall() && b.isSmall()) { 
-                _valueStack.back() = Cell{ .i64 = ( a.i64 - b.i64 ) };
+                int64_t r;
+                if (__builtin_sub_overflow(a.i64, b.i64, &r)) {
+                    //  TODO: fix culprit for cells.
+                    throw Mishap("Integer overflow trapped").culprit("Arg #1", a.i64).culprit("Arg #2", b.i64);
+                } else {
+                    _valueStack.back() = Cell{ .i64 = r };
+                }
             } else {
                 throw Mishap("Cannot subtract non-small values");
             }
@@ -166,8 +178,14 @@ private:
             Cell b = _valueStack.back();
             _valueStack.pop_back();
             Cell a =_valueStack.back();
-            if (a.isSmall() && b.isSmall()) { 
-                _valueStack.back() = Cell{ .i64 = ( ( a.i64 >> 3 ) * b.i64 ) };
+            if (a.isSmall() && b.isSmall()) {
+                int64_t r;
+                if (__builtin_mul_overflow( a.i64 >> 3, b.i64, &r ) ) {
+                    //  TODO: fix culprit for cells.
+                    throw Mishap("Integer overflow trapped").culprit("Arg #1", a.i64).culprit("Arg #2", b.i64);
+                } else {
+                    _valueStack.back() = Cell{ .i64 = r };
+                }
             } else {
                 throw Mishap("Cannot multiply non-small values");
             }
@@ -405,11 +423,11 @@ int main(int argc, char **argv) {
         CodePlanter planter(engine);
         planter.local( "x" );
 
-        planter.PUSHQ(100);
+        planter.PUSHQ(101);
         planter.POP_LOCAL( "x" );
         planter.PUSH_LOCAL( "x" );
         planter.PUSHQ(2);
-        planter.MUL();
+        planter.SUB();
         // planter.POP_LOCAL( "x" );
         planter.PUSHS();
         planter.RETURN();
