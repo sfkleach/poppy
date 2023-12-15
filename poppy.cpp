@@ -75,6 +75,8 @@ private:
                 {Instruction::RETURN, &&L_RETURN},
                 {Instruction::SUB, &&L_SUB},
             };
+
+            //  A tiny scrap of code to elegantly exit from the interpreter.
             _exit_code[0] = Cell{ .ref = &&L_HALT };
             return;
         }
@@ -88,9 +90,9 @@ private:
         }
 
         currentProcedure = pc;
-        _callStack.push_back( Cell{ .ref = nullptr } );
+        _callStack.push_back( Cell{ .ref = nullptr } );     // Dummy.
         _callStack.push_back( Cell{ .refCell = &_exit_code[0] } );
-        pc += ProcedureLayout::InstructionsOffset; // Skip the procedure header.
+        pc += ProcedureLayout::InstructionsOffset;          // Skip the procedure header.
         goto *pc++->ref;
 
         L_PASSIGN: {
