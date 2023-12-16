@@ -32,7 +32,27 @@ enum class Instruction {
     SUB,
 };
 
-
+// Required for garbage collection - using this info it is possible to scan a
+// procedure looking for pointers. The nargs tells how many arguments the instruction
+// has and the bitmask indicates which arguments are tagged pointers.
+void instructionInfo( const Instruction inst, int & nargs, unsigned int & bitmask ) {
+    nargs = 0;
+    bitmask = 0;
+    switch (inst) {
+        case Instruction::PUSHQ:    
+            bitmask = 0b1;
+            // fallthrough.
+        case Instruction::POP_GLOBAL:
+        case Instruction::POP_LOCAL:
+        case Instruction::PUSH_GLOBAL:
+        case Instruction::PUSH_LOCAL:
+            nargs = 1;
+            break;
+        case Instruction::PASSIGN:
+            nargs = 2;
+            break;
+    }
+}
 
 class Engine {
     friend class CodePlanter;
