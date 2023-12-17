@@ -4,7 +4,7 @@
 #include <iostream>
 #include <ios>
 #include <map>
-
+#include <memory>
 
 #include "itemizer.hpp"
 #include "itemrole.hpp"
@@ -12,6 +12,7 @@
 #include "heap.hpp"
 #include "mishap.hpp"
 #include "layout.hpp"
+#include "xroots.hpp"
 
 #define DEBUG 1
 
@@ -51,6 +52,8 @@ void instructionInfo( const Instruction inst, int & nargs, unsigned int & bitmas
         case Instruction::PASSIGN:
             nargs = 2;
             break;
+        default:
+            break;
     }
 }
 
@@ -68,6 +71,8 @@ private:
 
     std::map<std::string, RefIdent> _symbolTable;
     Heap _heap;
+
+    XRootsRegistry _xrootsRegistry;
 
 public:
     void declareGlobal(const std::string & name) {
@@ -277,7 +282,9 @@ public:
     }
 };
 
+
 class CodePlanter {
+
 private:
     Engine & _engine;
     Builder _builder;
@@ -291,6 +298,11 @@ private:
     size_t max_level = 0;
     std::vector<PlaceHolder> local_fixups;
 
+    // XRoots
+    std::vector<XRoot> _xroots;
+
+
+
 public:
     CodePlanter(Engine & engine) : 
         _engine(engine),
@@ -302,6 +314,7 @@ public:
         _builder.addCell(Cell::makeSmall(0));                   //  num locals
         _num_locals = _builder.placeHolderJustPlanted();
         _before_instructions = _builder.size();
+
     }
 
 public:
@@ -352,6 +365,15 @@ public:
 
     void global(const std::string & name) {
         _engine.declareGlobal(name);
+    }
+
+    Cell * build() {
+        Cell * p = _builder.object();
+
+        //  Protect from garbage collection for the duration of this code planter.
+        _xroots.emplace_back(&_engine._xrootsRegistry, Cell::makePtr(p));
+
+        return p;
     }
 
     void buildAndBind(const std::string & name) {
