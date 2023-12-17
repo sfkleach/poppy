@@ -39,11 +39,12 @@ enum class Instruction {
 // Required for garbage collection - using this info it is possible to scan a
 // procedure looking for pointers. The nargs tells how many arguments the instruction
 // has and the bitmask indicates which arguments are tagged pointers.
-void instructionInfo( const Instruction inst, int & nargs, unsigned int & bitmask ) {
+const char * instructionInfo( const Instruction inst, int & nargs, unsigned int & bitmask ) {
     nargs = 0;
     bitmask = 0;
+
     switch (inst) {
-        case Instruction::PUSHQ:    
+        case Instruction::PUSHQ:   
             bitmask = 0b1;
             // fallthrough!
         case Instruction::POP_GLOBAL:
@@ -62,6 +63,27 @@ void instructionInfo( const Instruction inst, int & nargs, unsigned int & bitmas
             //  zero nargs & empty bitmask.
             break;
     }
+
+    switch (inst) {
+        case Instruction::ADD: return "ADD";
+        case Instruction::CALL_GLOBAL: return "CALL_GLOBAL";
+        case Instruction::CALL_LOCAL: return "CALL_LOCAL";
+        case Instruction::GOTO: return "GOTO";
+        case Instruction::HALT: return "HALT";
+        case Instruction::MUL: return "MUL";
+        case Instruction::PASSIGN: return "PASSIGN";
+        case Instruction::POP_GLOBAL: return "POP_GLOBAL";
+        case Instruction::POP_LOCAL: return "POP_LOCAL";
+        case Instruction::PUSH_GLOBAL: return "PUSH_GLOBAL";
+        case Instruction::PUSH_LOCAL: return "PUSH_LOCAL";
+        case Instruction::PUSHQ: return "PUSHQ";
+        case Instruction::PUSHS: return "PUSHS";
+        case Instruction::RETURN: return "RETURN";
+        case Instruction::SUB: return "SUB";
+    }
+
+    // Unreachable.
+    __builtin_unreachable();
 }
 
 class Engine {
@@ -139,9 +161,9 @@ private:
         goto *pc++->ref;
 
         L_GOTO: {
-            int64_t delta = (pc++)->i64;
+            int64_t delta = pc->i64;
             pc += delta;
-            goto *pc;
+            goto *(pc->ref);
         }
 
         L_PASSIGN: {
@@ -373,9 +395,6 @@ private:
     size_t max_level = 0;
     std::vector<PlaceHolder> local_fixups;
 
-    //  Labels.
-
-
     // We allocate as many extra roots as we need during code-planting and
     // dispose of them all at the end of the code-planting process.
     std::vector<XRoot> _xroots;
@@ -391,7 +410,34 @@ public:
         _builder.addCell(Cell::makeSmall(0));                   //  num locals
         _num_locals = _builder.placeHolderJustPlanted();
         _before_instructions = _builder.size();
+    }
 
+public:
+    void debugDisplay() {
+        std::map<void *, Instruction> rev_map = {};
+        for (auto & [inst, addr] : _engine._opcode_map) {
+            rev_map[addr] = inst;
+        }
+
+        unsigned int n = ProcedureLayout::HeaderSize;
+        while ( n < _builder.size() ) {
+            void * inst_addr = _builder._codelist[n].ref;
+            auto it = rev_map.find(inst_addr);
+            if (it != rev_map.end()) {
+                int nargs;
+                unsigned int bitmask;
+                std::string_view name = instructionInfo(it->second, nargs, bitmask);
+                std::cout << n << ") " << name << std::endl;
+                n += 1;
+                for (int i = 0; i < nargs; i++) {
+                    std::cout << "  - " << _builder._codelist[n].u64 << std::endl;
+                    n += 1;
+                }
+            } else {
+                std::cout << n << ". BAD! " << _builder._codelist[n].u64 << std::endl;
+                n += 1;
+            }
+        }
     }
 
 public:
@@ -572,6 +618,7 @@ int main(int argc, char **argv) {
         Engine engine;
         engine.initialise();
         
+        //  Test out the itemization.
         std::ifstream source( "poem.txt" );
         source.unsetf(std::ios_base::skipws);
         Itemizer itemizer( source );
@@ -583,6 +630,7 @@ int main(int argc, char **argv) {
             std::cout << itemRoleToString(item.itemRole()) << std::endl;
         }
 
+        //  Test out the code planter.
         CodePlanter doubler(engine);
         doubler.PUSHS();
         doubler.ADD();
@@ -595,18 +643,25 @@ int main(int argc, char **argv) {
 
         main.PUSHQ(50);
         main.CALL_GLOBAL("doubler");
+        main.CALL_GLOBAL("doubler");
         main.POP_LOCAL( "x" );
         main.PUSH_LOCAL( "x" );
+
+        Label target = main.newLabel();
+        main.GOTO(target);
+
         main.PUSHQ(2);
         main.SUB();
-        // planter.POP_LOCAL( "x" );
+        
         main.PUSHS();
+
+        main.LABEL(target);
         main.RETURN();
         
+        main.debugDisplay();
+
         main.global( "main" );
         main.buildAndBind( "main" );
-
-
 
         engine.run( "main" );
 
