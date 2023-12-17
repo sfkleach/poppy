@@ -20,6 +20,8 @@ namespace poppy {
 
 enum class Instruction {
     ADD,
+    CALL_GLOBAL,
+    CALL_LOCAL,
     HALT,
     MUL,
     PASSIGN,
@@ -46,7 +48,9 @@ void instructionInfo( const Instruction inst, int & nargs, unsigned int & bitmas
         case Instruction::POP_GLOBAL:
         case Instruction::POP_LOCAL:
         case Instruction::PUSH_GLOBAL:
-        case Instruction::PUSH_LOCAL:
+        case Instruction::PUSH_LOCAL:        
+        case Instruction::CALL_GLOBAL:
+        case Instruction::CALL_LOCAL:
             nargs = 1;
             break;
         case Instruction::PASSIGN:
@@ -85,13 +89,14 @@ public:
 
 private:
     void init_or_run(Cell * pc, bool init) {
-
         // In order to get the address-of-labels into a map we need to
         // have a separate initialisation pass, so that the labels are
         // in scope while we populate the map.
         if (init) {
             _opcode_map = {
                 {Instruction::ADD, &&L_ADD},
+                {Instruction::CALL_GLOBAL, &&L_CALL_GLOBAL},
+                {Instruction::CALL_LOCAL, &&L_CALL_LOCAL},
                 {Instruction::HALT, &&L_HALT},
                 {Instruction::MUL, &&L_MUL},
                 {Instruction::PASSIGN, &&L_PASSIGN},
@@ -118,6 +123,7 @@ private:
             throw std::runtime_error("Not a procedure");
         }
 
+        Cell nextProcedure{Cell::makeSmall(0)};
         currentProcedure = pc;
         uint64_t nlocals = (currentProcedure + ProcedureLayout::NumLocalsOffset)->u64;
         _callStack.push_back( Cell{ .ref = nullptr } );     // Dummy.
@@ -132,6 +138,34 @@ private:
             Ident * ident = (pc++)->refIdent;
             Cell proc{ *pc++ };
             ident->value() = proc;
+            goto *(pc++->ref);
+        }
+
+        L_CALL_GLOBAL: {
+            Ident * ident = (pc++)->refIdent;
+            nextProcedure = ident->value();
+            goto COMMON_CALL;
+        }
+
+        L_CALL_LOCAL: {
+            uint64_t n = pc++->u64;
+            nextProcedure = *( &_callStack.back() - n );
+            goto *(pc++->ref);
+        }
+
+        COMMON_CALL: {
+            if (nextProcedure.isProcedure()) {
+                _callStack.push_back( Cell{ .refCell = currentProcedure } );
+                _callStack.push_back( Cell{ .refCell = pc } );
+                currentProcedure = nextProcedure.deref();
+                uint64_t nlocals = (currentProcedure + ProcedureLayout::NumLocalsOffset)->u64;
+                if (nlocals != 0) {
+                    _callStack.resize(_callStack.size() + nlocals, Cell::makeSmall(0));
+                }
+                pc = currentProcedure + ProcedureLayout::InstructionsOffset;
+            } else {
+                throw Mishap("Trying to call non-procedure").culprit("Value", nextProcedure.u64);
+            }
             goto *(pc++->ref);
         }
 
@@ -298,10 +332,9 @@ private:
     size_t max_level = 0;
     std::vector<PlaceHolder> local_fixups;
 
-    // XRoots
+    // We allocate as many extra roots as we need during code-planting and
+    // dispose of them all at the end of the code-planting process.
     std::vector<XRoot> _xroots;
-
-
 
 public:
     CodePlanter(Engine & engine) : 
@@ -331,24 +364,39 @@ public:
         _builder.addCell( Cell{ .u64 = n } );
     }
 
-    void addGlobal(const std::string & name) {
+    void addGlobal(const std::string & name, Instruction inst) {
+        addInstruction(inst);
         if (_engine._symbolTable.find(name) == _engine._symbolTable.end()) {
             std::cerr << "Global not declared: " << name << std::endl;
         }
         _builder.addCell(Cell::makeRefIdent(_engine._symbolTable[name]));
     }
+
+    void addLocal(const std::string & varname, Instruction inst) {
+        if (!tryAddLocal(varname, inst)) {
+            throw Mishap("Unknown local variable").culprit("Variable", varname);
+        }
+    }
     
-    void addLocal(const std::string & varname) {
+    bool tryAddLocal(const std::string & varname, Instruction inst) {
         for (int i = locals.size(); i > 0; i--) {
             if (locals[i-1] == varname) {
+                addInstruction(inst);
                 addRawUInt(i);  // This needs to become max_level - i.
                 PlaceHolder p = _builder.placeHolderJustPlanted();
                 local_fixups.push_back(p);
-                return;
+                return true;
             }
         }
-        throw Mishap("Unknown local variable").culprit("Variable", varname);
+        return false;
     }
+
+    void addLocalOrGlobal(const std::string & name, Instruction instLocal, Instruction instGlobal) {
+        if (!tryAddLocal(name, instLocal)) {
+            addGlobal(name, instGlobal);
+        }
+    }
+    
 
 public:
     void local(const std::string & name) {
@@ -393,24 +441,28 @@ public:
     }
 
 public:
+    void CALL_GLOBAL(const std::string & name) {
+        addGlobal(name, Instruction::CALL_GLOBAL);
+    }
+
+    void CALL_LOCAL(const std::string & name) {
+        addLocal(name, Instruction::CALL_LOCAL);
+    }
+
     void PUSH_GLOBAL(const std::string & name) {
-        addInstruction(Instruction::PUSH_GLOBAL);
-        addGlobal(name);
+        addGlobal(name, Instruction::PUSH_GLOBAL);
     }
 
     void PUSH_LOCAL(const std::string & name) {
-        addInstruction(Instruction::PUSH_LOCAL);
-        addLocal(name);
+        addLocal(name, Instruction::PUSH_LOCAL);
     }
 
     void POP_GLOBAL(const std::string & name) {
-        addInstruction(Instruction::POP_GLOBAL);
-        addGlobal(name);
+        addGlobal(name, Instruction::POP_GLOBAL);
     }
 
     void POP_LOCAL(const std::string & name) {
-        addInstruction(Instruction::POP_LOCAL);
-        addLocal(name);
+        addLocal(name, Instruction::POP_LOCAL);
     }
 
     void PUSHQ(int64_t i) {
