@@ -22,6 +22,7 @@ enum class Instruction {
     ADD,
     CALL_GLOBAL,
     CALL_LOCAL,
+    GOTO,
     HALT,
     MUL,
     PASSIGN,
@@ -44,19 +45,21 @@ void instructionInfo( const Instruction inst, int & nargs, unsigned int & bitmas
     switch (inst) {
         case Instruction::PUSHQ:    
             bitmask = 0b1;
-            // fallthrough.
+            // fallthrough!
         case Instruction::POP_GLOBAL:
         case Instruction::POP_LOCAL:
         case Instruction::PUSH_GLOBAL:
         case Instruction::PUSH_LOCAL:        
         case Instruction::CALL_GLOBAL:
         case Instruction::CALL_LOCAL:
+        case Instruction::GOTO:
             nargs = 1;
             break;
         case Instruction::PASSIGN:
             nargs = 2;
             break;
         default:
+            //  zero nargs & empty bitmask.
             break;
     }
 }
@@ -97,6 +100,7 @@ private:
                 {Instruction::ADD, &&L_ADD},
                 {Instruction::CALL_GLOBAL, &&L_CALL_GLOBAL},
                 {Instruction::CALL_LOCAL, &&L_CALL_LOCAL},
+                {Instruction::GOTO, &&L_GOTO},
                 {Instruction::HALT, &&L_HALT},
                 {Instruction::MUL, &&L_MUL},
                 {Instruction::PASSIGN, &&L_PASSIGN},
@@ -133,6 +137,12 @@ private:
         }
         pc += ProcedureLayout::InstructionsOffset;          // Skip the procedure header.
         goto *pc++->ref;
+
+        L_GOTO: {
+            int64_t delta = (pc++)->i64;
+            pc += delta;
+            goto *pc;
+        }
 
         L_PASSIGN: {
             Ident * ident = (pc++)->refIdent;
@@ -316,6 +326,37 @@ public:
     }
 };
 
+class Label {
+    Builder & _builder;
+    std::optional<size_t> _offset;
+    std::vector<PlaceHolder> _placeHolders;
+
+public:
+    Label(Builder & b) : _builder(b), _offset() {}
+
+public:
+
+    void plantLabel() {
+        size_t here = _builder._codelist.size();
+        if (!_offset) {
+            _builder.addCell( Cell::makeI64(static_cast<int64_t>(here) ) ); 
+            _placeHolders.push_back( _builder.placeHolderJustPlanted() );
+        } else {
+            int64_t delta = *_offset - here;
+            _builder.addCell( Cell::makeI64(delta));
+        }
+    }
+
+    void setLabel() {
+        size_t here = _builder._codelist.size();
+        for ( auto & p : _placeHolders ) {
+            int64_t there = p.getCell().i64;
+            p.setCell(Cell::makeI64(here - there));
+        }
+        _placeHolders.clear();
+        _offset = here;
+    }
+};
 
 class CodePlanter {
 
@@ -331,6 +372,9 @@ private:
     int scope_level = 0;
     size_t max_level = 0;
     std::vector<PlaceHolder> local_fixups;
+
+    //  Labels.
+
 
     // We allocate as many extra roots as we need during code-planting and
     // dispose of them all at the end of the code-planting process.
@@ -440,13 +484,30 @@ public:
         _engine._symbolTable[name]->value() = Cell::makePtr(c);
     }
 
+    Label newLabel() {
+        return Label(_builder);
+    }
+
 public:
+    void LABEL( Label & label ) {
+        label.setLabel();
+    }
+
+    void GOTO( Label & label ) {
+        addInstruction(Instruction::GOTO);
+        label.plantLabel();
+    }
+
     void CALL_GLOBAL(const std::string & name) {
         addGlobal(name, Instruction::CALL_GLOBAL);
     }
 
     void CALL_LOCAL(const std::string & name) {
         addLocal(name, Instruction::CALL_LOCAL);
+    }
+
+    void CALL(const std::string & name) {
+        addLocalOrGlobal(name, Instruction::CALL_LOCAL, Instruction::CALL_GLOBAL);
     }
 
     void PUSH_GLOBAL(const std::string & name) {
@@ -457,12 +518,20 @@ public:
         addLocal(name, Instruction::PUSH_LOCAL);
     }
 
+    void PUSH(const std::string & name) {
+        addLocalOrGlobal(name, Instruction::PUSH_LOCAL, Instruction::PUSH_GLOBAL);
+    }
+
     void POP_GLOBAL(const std::string & name) {
         addGlobal(name, Instruction::POP_GLOBAL);
     }
 
     void POP_LOCAL(const std::string & name) {
         addLocal(name, Instruction::POP_LOCAL);
+    }
+
+    void POP( const std::string & name ) {
+        addLocalOrGlobal(name, Instruction::POP_LOCAL, Instruction::POP_GLOBAL);
     }
 
     void PUSHQ(int64_t i) {

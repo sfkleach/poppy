@@ -56,6 +56,10 @@ public:
     inline static Cell makeU64( uint64_t n ) {
         return Cell{ .u64 = n };
     }
+
+    inline static Cell makeI64( int64_t n ) {
+        return Cell{ .i64 = n };
+    }
     
 public:
     inline Tag getTag() const { return (Tag)(u64 & 0x7); }
