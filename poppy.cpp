@@ -583,20 +583,30 @@ int main(int argc, char **argv) {
             std::cout << itemRoleToString(item.itemRole()) << std::endl;
         }
 
-        CodePlanter planter(engine);
-        planter.local( "x" );
+        CodePlanter doubler(engine);
+        doubler.PUSHS();
+        doubler.ADD();
+        doubler.RETURN();
+        doubler.global( "doubler" );
+        doubler.buildAndBind( "doubler" );
 
-        planter.PUSHQ(101);
-        planter.POP_LOCAL( "x" );
-        planter.PUSH_LOCAL( "x" );
-        planter.PUSHQ(2);
-        planter.SUB();
+        CodePlanter main(engine);
+        main.local( "x" );
+
+        main.PUSHQ(50);
+        main.CALL_GLOBAL("doubler");
+        main.POP_LOCAL( "x" );
+        main.PUSH_LOCAL( "x" );
+        main.PUSHQ(2);
+        main.SUB();
         // planter.POP_LOCAL( "x" );
-        planter.PUSHS();
-        planter.RETURN();
+        main.PUSHS();
+        main.RETURN();
         
-        planter.global( "main" );
-        planter.buildAndBind( "main" );
+        main.global( "main" );
+        main.buildAndBind( "main" );
+
+
 
         engine.run( "main" );
 
