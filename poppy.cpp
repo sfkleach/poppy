@@ -24,6 +24,8 @@ enum class Instruction {
     CALL_LOCAL,
     GOTO,
     HALT,
+    IFNOT,
+    IFSO,
     MUL,
     PASSIGN,
     POP_GLOBAL,
@@ -54,6 +56,8 @@ const char * instructionInfo( const Instruction inst, int & nargs, unsigned int 
         case Instruction::CALL_GLOBAL:
         case Instruction::CALL_LOCAL:
         case Instruction::GOTO:
+        case Instruction::IFSO:
+        case Instruction::IFNOT:
             nargs = 1;
             break;
         case Instruction::PASSIGN:
@@ -68,6 +72,8 @@ const char * instructionInfo( const Instruction inst, int & nargs, unsigned int 
         case Instruction::ADD: return "ADD";
         case Instruction::CALL_GLOBAL: return "CALL_GLOBAL";
         case Instruction::CALL_LOCAL: return "CALL_LOCAL";
+        case Instruction::IFNOT: return "IFNOT";
+        case Instruction::IFSO: return "IFSO";
         case Instruction::GOTO: return "GOTO";
         case Instruction::HALT: return "HALT";
         case Instruction::MUL: return "MUL";
@@ -122,6 +128,8 @@ private:
                 {Instruction::ADD, &&L_ADD},
                 {Instruction::CALL_GLOBAL, &&L_CALL_GLOBAL},
                 {Instruction::CALL_LOCAL, &&L_CALL_LOCAL},
+                {Instruction::IFNOT, &&L_IFNOT},
+                {Instruction::IFSO, &&L_IFSO},
                 {Instruction::GOTO, &&L_GOTO},
                 {Instruction::HALT, &&L_HALT},
                 {Instruction::MUL, &&L_MUL},
@@ -159,6 +167,30 @@ private:
         }
         pc += ProcedureLayout::InstructionsOffset;          // Skip the procedure header.
         goto *pc++->ref;
+
+        L_IFNOT: {
+            int64_t delta = (pc++)->i64;
+            Cell v = _valueStack.back();
+            _valueStack.pop_back();
+            if (v.isFalse()) {
+                pc += delta;
+                goto *(pc->ref);
+            } else {
+                goto *(pc++->ref);
+            }
+        }
+
+        L_IFSO: {
+            int64_t delta = (pc++)->i64;
+            Cell v = _valueStack.back();
+            _valueStack.pop_back();
+            if (v.isntFalse()) {
+                pc += delta;
+                goto *(pc->ref);
+            } else {
+                goto *(pc++->ref);
+            }
+        }
 
         L_GOTO: {
             int64_t delta = pc->i64;
@@ -541,6 +573,16 @@ public:
 
     void GOTO( Label & label ) {
         addInstruction(Instruction::GOTO);
+        label.plantLabel();
+    }
+
+    void IFNOT( Label & label ) {
+        addInstruction(Instruction::IFNOT);
+        label.plantLabel();
+    }
+
+    void IFSO( Label & label ) {
+        addInstruction(Instruction::IFSO);
         label.plantLabel();
     }
 
