@@ -1,5 +1,5 @@
 #ifndef ITEMIZER_HPP
-#define Itemizer_HPP
+#define ITEMIZER_HPP
 
 #include <istream>
 #include <optional>

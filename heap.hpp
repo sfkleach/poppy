@@ -10,12 +10,14 @@ namespace poppy {
 class Heap {
  
 private:
-    Cell * _data;
-    Cell * _top;
-    size_t _capacity;
+    Cell * _block_start;
+    Cell * _block_end;
+    Cell * _working_tip;
+    Cell * _working_limit;
 
 public:
     Heap();
+    size_t capacity() { return _block_end - _block_start; }
 
     friend class Builder;
 };

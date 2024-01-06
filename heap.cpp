@@ -9,13 +9,15 @@ namespace poppy {
 
 Heap::Heap()
 {
-    _capacity = 1024;
-    _data = (Cell *)aligned_alloc(sizeof(Cell), _capacity);
-    _top = _data;
-
-    if (_data == nullptr ) {
+    size_t capacity = 1024;
+    _block_start = (Cell *)aligned_alloc(sizeof(Cell), capacity);
+    if (_block_start == nullptr ) {
         throw std::runtime_error("Cannot allocate heap store");
     }
+    
+    _block_end = _block_start + capacity;
+    _working_tip = _block_start;
+    _working_limit = _block_start + capacity / 2;
 }
 
 Builder::Builder(Heap & heap) : 
@@ -37,12 +39,12 @@ size_t Builder::size() {
 }
 
 Cell * Builder::object() {
-    if (_heap._top + _codelist.size() >= _heap._data + _heap._capacity) {
+    if (_heap._working_tip + _codelist.size() >= _heap._working_limit) {
         throw std::runtime_error("Heap overflow");
     }
-    Cell * result =_heap._top + _key_offset;
+    Cell * result =_heap._working_tip + _key_offset;
     for (auto cell : _codelist) {
-        *_heap._top++ = cell;
+        *_heap._working_tip++ = cell;
     }
     return result;
 }
