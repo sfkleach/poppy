@@ -74,7 +74,6 @@ public:
     
 public:
     inline Tag getTag() const { return (Tag)(u64 & TAG_MASK); }
-    inline Tag getTag() const { return (Tag)(u64 & TAG_MASK); }
     inline UpperTag getUpperTag() const { return (UpperTag)((u64 & BOTH_TAG_MASK) >> TAG_WIDTH); }
     inline unsigned char getWideTag() const { return u64 & BOTH_TAG_MASK; }
     inline Cell * deref() const { return (Cell *)(u64 & ~TAG_WIDTH); }
