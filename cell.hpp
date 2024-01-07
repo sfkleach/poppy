@@ -9,8 +9,8 @@ namespace poppy {
 typedef void * Ref;
 typedef class Ident * RefIdent;
 
-const static unsigned int TAG_WIDTH = 3;
-const static unsigned int TAG_MASK = 0x111;
+const static uint64_t TAG_WIDTH = 3;
+const static uint64_t TAG_MASK = 0b111;
 
 enum class Tag {
     Small,          // 000 61-bit signed integer
@@ -76,7 +76,7 @@ public:
     inline Tag getTag() const { return (Tag)(u64 & TAG_MASK); }
     inline UpperTag getUpperTag() const { return (UpperTag)((u64 & BOTH_TAG_MASK) >> TAG_WIDTH); }
     inline unsigned char getWideTag() const { return u64 & BOTH_TAG_MASK; }
-    inline Cell * deref() const { return (Cell *)(u64 & ~TAG_WIDTH); }
+    inline Cell * deref() const { return (Cell *)(u64 & ~TAG_MASK); }
 
 
 public:
@@ -90,7 +90,7 @@ public:
     }
 
     inline bool isProcedure() const {
-        return isPtr() && deref()->isProcedureKey();
+        return isPtr() && (deref()->u64 == ProcedureTag);
     }
 
 public:
