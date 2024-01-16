@@ -7,9 +7,10 @@
 namespace poppy {
 
 class GarbageCollector {
+private:
+    Engine & _engine;    
 public:
-    GarbageCollector(Engine & engine);
-    ~GarbageCollector();
+    GarbageCollector(Engine & engine) : _engine(engine) {}
     void visitCell(Cell & cell);
     void visitObject(Cell * object);
     void enqueueObject(Cell * object);

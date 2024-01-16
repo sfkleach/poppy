@@ -3,14 +3,6 @@
 
 namespace poppy {
 
-GarbageCollector::GarbageCollector(Engine & engine) {
-
-}
-
-GarbageCollector::~GarbageCollector() {
-
-}
-
 void GarbageCollector::visitCell(Cell & cell) {
 
 }
