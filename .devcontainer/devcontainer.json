@@ -1,6 +1,11 @@
 {
     "name": "Rust and C++",
     "image": "rust:latest",
+    "features": {
+        "ghcr.io/devcontainers/features/sshd:1": {
+            "version": "latest"
+        }
+    },
     "customizations": {
         "vscode": {
             "settings": { 
