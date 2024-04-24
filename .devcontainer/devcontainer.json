@@ -1,0 +1,16 @@
+{
+    "name": "Rust and C++",
+    "image": "rust:latest",
+    "customizations": {
+        "vscode": {
+            "settings": { 
+                "terminal.integrated.shell.linux": "/bin/bash"
+            },
+            "extensions": [
+                "rust-lang.rust",
+                "ms-vscode.cpptools"
+            ]      
+        }
+    },
+    "postCreateCommand": "apt-get update && apt-get install -y build-essential && cargo install just"
+}
