@@ -13,14 +13,14 @@ const static uint64_t TAG_WIDTH = 3;
 const static uint64_t TAG_MASK = 0b111;
 
 enum class Tag {
-    Small,          // 000 61-bit signed integer
-    FreePtr,        // 001 normal pointer
-    PinnedPtr,      // 010 pinned pointer
-    LockedPtr,      // 011 pinned and locked pointer
-    EvacuatedPtr,   // 100 evacuated normal pointer
-    SmallFloat,     // 101 61-bit floating point
-    Special,        // 110 free for any use
-    Unused          // 111 free for any use
+    Small,              // 000 61-bit signed integer
+    FreePtr,            // 001 normal pointer
+    SmallFloat,         // 010 61-bit floating point
+    Key,                // 011 key value
+    Special,            // 100 special literal value
+    EvacuatedObject,    // 101 evacuated object (points to new location)
+    Unused,             // 110 free for any use
+    VisitedObject       // 111 visited object (61-bits remain, reset to 011)
 };
 
 const static unsigned int UPPER_TAG_WIDTH = 5;
@@ -29,17 +29,21 @@ const static unsigned int BOTH_WIDTH = TAG_WIDTH + UPPER_TAG_WIDTH;
 const static unsigned int BOTH_TAG_MASK = 0xFF;
 
 enum class UpperTag {
-    Key,                // 0000_0000 <- Reserved for system keys.
-    NotDefined0,        // 0000_0001 <- Reserved for future use.
-    NotDefined1,        // 0000_0010 <- Reserved for future use.
-    False,              // 0001_1111 <- unique 5-bit pattern for important constant.
+    False,              // 0000_0100 <- Unique false value
+    True,               // 0000_1100 <- True
 };
 
+
+
+//  System keys
 enum class KeyTag {
-    KeyKey,
-    ProcedureKey,
-    BooleanKey,
+    KeyKey,             // 0000_0011 <- Key key
+    ProcedureKey,       // 0000_1011 <- Procedure key
+    BooleanKey,         // 0001_0111 <- Boolean key
 };
+
+const static uint64_t FALSE_VALUE = (((int)UpperTag::False) << TAG_WIDTH) | (int)Tag::Special;
+const static uint64_t TRUE_VALUE = (((int)UpperTag::True) << TAG_WIDTH) | (int)Tag::Small;
 
 class Cell {
 public:
@@ -81,9 +85,8 @@ public:
 
 public:
     static const uint64_t ProcedureTag = 
-        ((uint64_t)KeyTag::ProcedureKey << BOTH_WIDTH)
-        | ((uint64_t)UpperTag::Key << TAG_WIDTH) 
-        | (uint64_t)Tag::Special;
+        ((uint64_t)KeyTag::ProcedureKey << TAG_WIDTH)
+        | (uint64_t)Tag::Key;
     
     inline bool isProcedureKey() const { 
         return u64 == ProcedureTag;
@@ -95,9 +98,9 @@ public:
 
 public:
     inline bool isSmall() const { return getTag() == Tag::Small; }
-    inline bool isFalse() const { return ( u64 & 0b11111 ) == 0b11111; }
-    inline bool isntFalse() const { return ( u64 & 0b11111 ) != 0b11111; }
-    inline bool isPtr() const { return ((u64 & 0b100) == 0) & ((u64 & 0b011) != 0); }
+    inline bool isFalse() const { return ( u64 & 0xF ) == ( FALSE_VALUE & 0xF ); }
+    inline bool isntFalse() const { return ( u64 & 0xF ) != ( FALSE_VALUE & 0xF ); }
+    inline bool isPtr() const { return (u64 & TAG_MASK) == (int)Tag::FreePtr; }
 };
 
 class Ident {
