@@ -50,6 +50,9 @@ private:
     size_t max_level = 0;
     std::vector<PlaceHolder> local_fixups;
 
+    // Pointer offsets
+    std::vector<int>  _q_offsets;
+
     // We allocate as many extra roots as we need during code-planting and
     // dispose of them all at the end of the code-planting process.
     std::vector<XRoot> _xroots;
@@ -64,6 +67,7 @@ public:
     void addInstruction(Instruction inst);
 
     void addData(Cell cell);
+    void addDataQ(Cell cell);
 
     void addRawUInt(uint64_t n);
 

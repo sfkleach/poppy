@@ -38,6 +38,7 @@ enum class KeyTag {
     KeyKey,             // 0000_0011 <- Key key
     ProcedureKey,       // 0000_1011 <- Procedure key
     BooleanKey,         // 0001_0011 <- Boolean key
+    IntVectorKey,       // 0001_1011 <- Int vector key
 };
 
 const static uint64_t FALSE_VALUE = (((int)UpperTag::False) << TAG_WIDTH) | (int)Tag::Special;

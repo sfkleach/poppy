@@ -90,6 +90,11 @@ void CodePlanter::addData(Cell cell) {
     _builder.addCell(cell);
 }
 
+void CodePlanter::addDataQ(Cell cell) {
+    _q_offsets.push_back(_builder.size());
+    _builder.addCell(cell);
+}
+
 void CodePlanter::addRawUInt(uint64_t n) {
     _builder.addCell( Cell{ .u64 = n } );
 }
@@ -230,7 +235,7 @@ void CodePlanter::POP( const std::string & name ) {
 
 void CodePlanter::PUSHQ(int64_t i) {
     addInstruction(Instruction::PUSHQ);
-    addData(Cell::makeSmall(i));
+    addDataQ(Cell::makeSmall(i));
 }
 
 void CodePlanter::ADD() {
