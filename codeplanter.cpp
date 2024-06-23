@@ -48,6 +48,7 @@ CodePlanter::CodePlanter(Engine & engine) :
     _builder.addCell(Cell{});
     _length = _builder.placeHolderJustPlanted();
     _builder.addKey(Cell{ .u64 = Cell::ProcedureTag });
+    _builder.addCell(Cell::makeSmall(0));                   //  GC pointer offsets (or 0 if not used)
     _builder.addCell(Cell::makeSmall(0));                   //  num locals
     _num_locals = _builder.placeHolderJustPlanted();
     _before_instructions = _builder.size();
