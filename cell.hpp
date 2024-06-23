@@ -14,7 +14,7 @@ const static uint64_t TAG_MASK = 0b111;
 
 enum class Tag {
     Small,              // 000 61-bit signed integer
-    FreePtr,            // 001 normal pointer
+    TaggedPtr,          // 001 normal pointer
     SmallFloat,         // 010 61-bit floating point
     Key,                // 011 key value
     Special,            // 100 special literal value
@@ -65,7 +65,7 @@ public:
     }
 
     inline static Cell makePtr( Cell * ptr ) {
-        return Cell{ .u64 = ((uint64_t)ptr | (int)Tag::FreePtr) };
+        return Cell{ .u64 = ((uint64_t)ptr | (int)Tag::TaggedPtr) };
     }
 
     inline static Cell makeU64( uint64_t n ) {
@@ -100,7 +100,7 @@ public:
     inline bool isSmall() const { return getTag() == Tag::Small; }
     inline bool isFalse() const { return ( u64 & 0xF ) == ( FALSE_VALUE & 0xF ); }
     inline bool isntFalse() const { return ( u64 & 0xF ) != ( FALSE_VALUE & 0xF ); }
-    inline bool isPtr() const { return (u64 & TAG_MASK) == (int)Tag::FreePtr; }
+    inline bool isPtr() const { return (u64 & TAG_MASK) == (int)Tag::TaggedPtr; }
 };
 
 class Ident {
