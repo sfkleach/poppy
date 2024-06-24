@@ -92,14 +92,14 @@ public:
     }
 
     inline bool isProcedure() const {
-        return isPtr() && (deref()->u64 == ProcedureTag);
+        return isTaggedPtr() && (deref()->u64 == ProcedureTag);
     }
 
 public:
     inline bool isSmall() const { return getTag() == Tag::Small; }
     inline bool isFalse() const { return ( u64 & 0xF ) == ( FALSE_VALUE & 0xF ); }
     inline bool isntFalse() const { return ( u64 & 0xF ) != ( FALSE_VALUE & 0xF ); }
-    inline bool isPtr() const { return (u64 & TAG_MASK) == (int)Tag::TaggedPtr; }
+    inline bool isTaggedPtr() const { return (u64 & TAG_MASK) == (int)Tag::TaggedPtr; }
 };
 
 class Ident {
