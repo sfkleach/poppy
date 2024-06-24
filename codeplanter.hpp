@@ -42,6 +42,7 @@ private:
     Builder _builder;
     size_t _before_instructions;
     PlaceHolder _length;
+    PlaceHolder _qblock;
     PlaceHolder _num_locals;
 
     //  Locals

@@ -45,11 +45,12 @@ CodePlanter::CodePlanter(Engine & engine) :
     _engine(engine),
     _builder(engine._heap)
 {
-    _builder.addCell(Cell{});
+    _builder.addCell(Cell{});                               // qblock
+    _qblock = _builder.placeHolderJustPlanted();
+    _builder.addCell(Cell{});                               // length
     _length = _builder.placeHolderJustPlanted();
-    _builder.addKey(Cell{ .u64 = Cell::ProcedureTag });
-    _builder.addCell(Cell::makeSmall(0));                   //  GC pointer offsets (or 0 if not used)
-    _builder.addCell(Cell::makeSmall(0));                   //  num locals
+    _builder.addKey(Cell{ .u64 = Cell::ProcedureTag });     // key
+    _builder.addCell(Cell::makeSmall(0));                   // num locals
     _num_locals = _builder.placeHolderJustPlanted();
     _before_instructions = _builder.size();
 }
@@ -150,6 +151,21 @@ void CodePlanter::global(const std::string & name) {
 }
 
 Cell * CodePlanter::build() {
+    // Add the Q-block
+    _qblock.setCell(Cell::makeSmall(_builder.size() - _before_instructions));
+    for (auto &q : _q_offsets) {
+        this->addRawUInt(q);
+    }
+
+    _length.setCell( Cell::makeSmall( _builder.size() - _before_instructions ) );
+    _num_locals.setCell( Cell::makeU64(max_level) );
+
+    // Fix up the local variable offsets.
+    for (auto & p : local_fixups) {
+        uint64_t n = p.getCell().u64;
+        uint64_t new_n = max_level - n;
+        p.setCell( Cell{ .u64 = new_n } );
+    }
     Cell * p = _builder.object();
 
     //  Protect from garbage collection for the duration of this code planter.
@@ -159,8 +175,13 @@ Cell * CodePlanter::build() {
 }
 
 void CodePlanter::buildAndBind(const std::string & name) {
-    size_t after_instructions = _builder.size();
-    _length.setCell( Cell::makeSmall( after_instructions - _before_instructions ) );
+    // Add the Q-block
+    _qblock.setCell(Cell::makeSmall(_builder.size() - _before_instructions));
+    for (auto &q : _q_offsets) {
+        this->addRawUInt(q);
+    }
+
+    _length.setCell( Cell::makeSmall( _builder.size() - _before_instructions ) );
     _num_locals.setCell( Cell::makeU64(max_level) );
 
     // Fix up the local variable offsets.
