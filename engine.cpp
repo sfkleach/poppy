@@ -327,6 +327,28 @@ void Engine::run(const std::string & main) {
     }
 }
 
+void Engine::multiLineDisplay(Cell p) {
+    if (p.isSmall()) {
+        std::cout << "  Value : " << p.getSmall() << std::endl;
+    } else if (p.isProcedure()) {
+        Cell * pk = p.deref();
+        std::cout << "  Procedure" << std::endl;
+        std::cout << "    NumLocals: " << (pk + ProcedureLayout::NumLocalsOffset)->u64 << std::endl;
+        int pl = (pk + ProcedureLayout::LengthOffset)->getSmall();
+        std::cout << "    Length   : " << pl << std::endl;
+        int qb = (pk + ProcedureLayout::QBlockOffset)->getSmall();
+        std::cout << "    QBlock   : " << qb << std::endl;
+        for (int i = qb; i < pl; i++) {
+            int offset = (pk + i)->i64;
+            std::cout << "      offset[" << i - qb << "]: " << offset << " -> ";
+            Cell q = pk[offset];
+            std::cout << q.u64 << std::endl;
+        }
+    } else {
+        std::cout << p.u64 << std::endl;
+    }
+}
+
 void Engine::debugDisplay() {
     std::cout << "Value Stack (Bottom to Top)" << std::endl;
     for ( auto & c : _valueStack ) {
@@ -335,7 +357,8 @@ void Engine::debugDisplay() {
     std::cout << std::endl;
     std::cout << "Dictionary" << std::endl;
     for (auto & [name, ident] : _symbolTable) {
-        std::cout << name << " = " << ident->value().u64 << std::endl;
+        std::cout << name << ":" << std::endl;
+        multiLineDisplay(ident->value());
     }
 }
 
