@@ -68,10 +68,10 @@ int main(int argc, char **argv) {
         main.LABEL(target);
         main.RETURN();
         
-        main.debugDisplay();
-
+        
         main.global( "main" );
         main.buildAndBind( "main" );
+        main.debugDisplay();
 
         engine.run( "main" );
 

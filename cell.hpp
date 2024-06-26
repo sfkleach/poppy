@@ -38,6 +38,7 @@ enum class KeyTag {
     KeyKey,             // 0000_0011 <- Key key
     ProcedureKey,       // 0000_1011 <- Procedure key
     BooleanKey,         // 0001_0011 <- Boolean key
+    IntVectorKey,       // 0001_1011 <- Int vector key
 };
 
 const static uint64_t FALSE_VALUE = (((int)UpperTag::False) << TAG_WIDTH) | (int)Tag::Special;
@@ -91,14 +92,17 @@ public:
     }
 
     inline bool isProcedure() const {
-        return isPtr() && (deref()->u64 == ProcedureTag);
+        return isTaggedPtr() && (deref()->u64 == ProcedureTag);
     }
 
 public:
     inline bool isSmall() const { return getTag() == Tag::Small; }
+    inline int getSmall() const { return i64 >> TAG_WIDTH; }
+
+public:
     inline bool isFalse() const { return ( u64 & 0xF ) == ( FALSE_VALUE & 0xF ); }
     inline bool isntFalse() const { return ( u64 & 0xF ) != ( FALSE_VALUE & 0xF ); }
-    inline bool isPtr() const { return (u64 & TAG_MASK) == (int)Tag::TaggedPtr; }
+    inline bool isTaggedPtr() const { return (u64 & TAG_MASK) == (int)Tag::TaggedPtr; }
 };
 
 class Ident {

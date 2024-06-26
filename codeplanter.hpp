@@ -42,6 +42,7 @@ private:
     Builder _builder;
     size_t _before_instructions;
     PlaceHolder _length;
+    PlaceHolder _qblock;
     PlaceHolder _num_locals;
 
     //  Locals
@@ -49,6 +50,9 @@ private:
     int scope_level = 0;
     size_t max_level = 0;
     std::vector<PlaceHolder> local_fixups;
+
+    // Pointer offsets
+    std::vector<int>  _q_offsets;
 
     // We allocate as many extra roots as we need during code-planting and
     // dispose of them all at the end of the code-planting process.
@@ -64,6 +68,7 @@ public:
     void addInstruction(Instruction inst);
 
     void addData(Cell cell);
+    void addDataQ(Cell cell);
 
     void addRawUInt(uint64_t n);
 

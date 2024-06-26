@@ -45,19 +45,27 @@ CodePlanter::CodePlanter(Engine & engine) :
     _engine(engine),
     _builder(engine._heap)
 {
-    _builder.addCell(Cell{});
+    _builder.addCell(Cell{});                               // qblock
+    _qblock = _builder.placeHolderJustPlanted();
+    _builder.addCell(Cell{});                               // length
     _length = _builder.placeHolderJustPlanted();
-    _builder.addKey(Cell{ .u64 = Cell::ProcedureTag });
-    _builder.addCell(Cell::makeSmall(0));                   //  GC pointer offsets (or 0 if not used)
-    _builder.addCell(Cell::makeSmall(0));                   //  num locals
+    _builder.addKey(Cell{ .u64 = Cell::ProcedureTag });     // key
+    _builder.addCell(Cell::makeSmall(0));                   // num locals
     _num_locals = _builder.placeHolderJustPlanted();
-    _before_instructions = _builder.size();
 }
 
 void CodePlanter::debugDisplay() {
     std::map<void *, Instruction> rev_map = {};
     for (auto & [inst, addr] : _engine._opcode_map) {
         rev_map[addr] = inst;
+    }
+
+    {
+        int offset = 0;
+        for (auto &cell: _builder._codelist) {
+            std::cout << "[" << offset << "] " << cell.u64 << " " << std::endl;
+            offset += 1;
+        }
     }
 
     unsigned int n = ProcedureLayout::HeaderSize;
@@ -71,11 +79,11 @@ void CodePlanter::debugDisplay() {
             std::cout << n << ") " << name << std::endl;
             n += 1;
             for (int i = 0; i < nargs; i++) {
-                std::cout << "  - " << _builder._codelist[n].u64 << std::endl;
+                std::cout << "  " << n << ") " << _builder._codelist[n].u64 << std::endl;
                 n += 1;
             }
         } else {
-            std::cout << n << ". BAD! " << _builder._codelist[n].u64 << std::endl;
+            std::cout << n << ") BAD! " << _builder._codelist[n].u64 << std::endl;
             n += 1;
         }
     }
@@ -87,6 +95,11 @@ void CodePlanter::addInstruction(Instruction inst) {
 }
 
 void CodePlanter::addData(Cell cell) {
+    _builder.addCell(cell);
+}
+
+void CodePlanter::addDataQ(Cell cell) {
+    _q_offsets.push_back(_builder.size() - ProcedureLayout::KeyOffsetFromStart);
     _builder.addCell(cell);
 }
 
@@ -145,6 +158,21 @@ void CodePlanter::global(const std::string & name) {
 }
 
 Cell * CodePlanter::build() {
+    // Add the Q-block
+    _qblock.setCell(Cell::makeSmall(_builder.size() - ProcedureLayout::KeyOffsetFromStart));
+    for (auto &q : _q_offsets) {
+        this->addRawUInt(q);
+    }
+
+    _length.setCell( Cell::makeSmall( _builder.size() - ProcedureLayout::KeyOffsetFromStart) );
+    _num_locals.setCell( Cell::makeU64(max_level) );
+
+    // Fix up the local variable offsets.
+    for (auto & p : local_fixups) {
+        uint64_t n = p.getCell().u64;
+        uint64_t new_n = max_level - n;
+        p.setCell( Cell{ .u64 = new_n } );
+    }
     Cell * p = _builder.object();
 
     //  Protect from garbage collection for the duration of this code planter.
@@ -154,8 +182,15 @@ Cell * CodePlanter::build() {
 }
 
 void CodePlanter::buildAndBind(const std::string & name) {
-    size_t after_instructions = _builder.size();
-    _length.setCell( Cell::makeSmall( after_instructions - _before_instructions ) );
+    // Add the Q-block
+    std::cout << "Q-block offset: " << _builder.size()  - ProcedureLayout::KeyOffsetFromStart << std::endl;
+    std::cout << "Q-block size:   " << _q_offsets.size() << std::endl;
+    _qblock.setCell(Cell::makeSmall(_builder.size() - ProcedureLayout::KeyOffsetFromStart));
+    for (auto &q : _q_offsets) {
+        this->addRawUInt(q);
+    }
+
+    _length.setCell( Cell::makeSmall( _builder.size() - ProcedureLayout::KeyOffsetFromStart ) );
     _num_locals.setCell( Cell::makeU64(max_level) );
 
     // Fix up the local variable offsets.
@@ -230,7 +265,7 @@ void CodePlanter::POP( const std::string & name ) {
 
 void CodePlanter::PUSHQ(int64_t i) {
     addInstruction(Instruction::PUSHQ);
-    addData(Cell::makeSmall(i));
+    addDataQ(Cell::makeSmall(i));
 }
 
 void CodePlanter::ADD() {

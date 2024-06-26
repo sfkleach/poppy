@@ -78,6 +78,8 @@ public:
 
 public:
     void debugDisplay();
+private:
+    void multiLineDisplay(Cell p);
 };
 
 } // namespace poppy
