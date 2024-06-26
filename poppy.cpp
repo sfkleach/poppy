@@ -20,6 +20,18 @@
 
 namespace poppy {
 
+void bannerLine() {
+    std::cout << "################################################################################" << std::endl;
+}
+
+void printSection(const char * message) {
+    std::cout << std::endl;
+    bannerLine();
+    std::cout << "### " << message << std::endl;
+    bannerLine();
+    std::cout << std::endl;
+}
+
 int main(int argc, char **argv) {
     using namespace poppy;
 
@@ -29,6 +41,7 @@ int main(int argc, char **argv) {
         engine.initialise();
         
         //  Test out the itemization.
+        printSection("Itemization example");
         std::ifstream source( "poem.txt" );
         source.unsetf(std::ios_base::skipws);
         Itemizer itemizer( source );
@@ -41,6 +54,7 @@ int main(int argc, char **argv) {
         }
 
         //  Test out the code planter.
+        printSection("Codeplanter example");
         CodePlanter doubler(engine);
         doubler.PUSHS();
         doubler.ADD();
@@ -71,10 +85,14 @@ int main(int argc, char **argv) {
         
         main.global( "main" );
         main.buildAndBind( "main" );
+
+        printSection("Show Procedure record");
         main.debugDisplay();
 
+        printSection("Execute planted code");
         engine.run( "main" );
 
+        printSection("Show Engine final state");
         engine.debugDisplay();
 
         return EXIT_SUCCESS;
