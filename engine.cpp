@@ -107,7 +107,10 @@ void Engine::init_or_run(Cell * pc, bool init) {
         };
 
         //  A tiny scrap of code to elegantly exit from the interpreter.
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wdangling-pointer="
         _exit_code[0] = Cell{ .ref = &&L_HALT };
+        #pragma GCC diagnostic pop
         return;
     }
 

@@ -20,6 +20,10 @@ public:
     size_t capacity() { return _block_end - _block_start; }
 
     friend class Builder;
+
+public:
+    Cell * nextObject(Cell * keyPtr);
+    Cell * firstObject();
 };
 
 class Builder {

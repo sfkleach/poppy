@@ -103,6 +103,7 @@ public:
     inline bool isFalse() const { return ( u64 & 0xF ) == ( FALSE_VALUE & 0xF ); }
     inline bool isntFalse() const { return ( u64 & 0xF ) != ( FALSE_VALUE & 0xF ); }
     inline bool isTaggedPtr() const { return (u64 & TAG_MASK) == (int)Tag::TaggedPtr; }
+    inline bool isKey() const { return (u64 & TAG_MASK) == (int)Tag::Key; }
 };
 
 class Ident {
