@@ -88,6 +88,9 @@ int main(int argc, char **argv) {
 
         printSection("Show Procedure record");
         main.debugDisplay();
+        
+        printSection("Scan heap");
+        engine.showHeap();
 
         printSection("Execute planted code");
         engine.run( "main" );

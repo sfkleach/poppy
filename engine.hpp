@@ -78,6 +78,7 @@ public:
 
 public:
     void debugDisplay();
+    void showHeap() { _heap.showHeap(); }
 private:
     void multiLineDisplay(Cell p);
 };

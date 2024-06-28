@@ -28,7 +28,7 @@ CXXFLAGS=-Wall -g -std=c++17
 CPPFLAGS=
 TARGET_ARCH=
 
-poppy: poppy.o itemizer.o itemattrs.o item.o itemrole.o heap.o mishap.o xroots.o engine.o codeplanter.o
+poppy: poppy.o itemizer.o itemattrs.o item.o itemrole.o heap.o mishap.o xroots.o engine.o codeplanter.o cell.o
 	g++ $(CXXFLAGS) -o $@ $^
 
 include dependencies.makefile

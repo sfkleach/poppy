@@ -4,6 +4,7 @@
 #include "heap.hpp"
 #include "mishap.hpp"
 #include "layout.hpp"
+#include "cell.hpp"
 
 namespace poppy {
 
@@ -22,9 +23,14 @@ namespace poppy {
 
     Cell * Heap::nextObject(Cell * keyCell) {
         switch (keyCell->u64) {
-            case (uint64_t)KeyTag::ProcedureKey: {
-                Cell * p = keyCell + ProcedureLayout::LengthOffset;
-                return p > _working_tip ? nullptr : p;
+            case ProcedureKeyValue.u64: {
+                Cell * p = keyCell + (keyCell + ProcedureLayout::LengthOffset)->getSmall();
+                while (p < _working_tip) {
+                    if (p->isKey())
+                        return p;
+                    p += 1;
+                }
+                return nullptr;
             }
             default:
                 throw Mishap("Unknown key").culprit("Key", keyCell->u64);
@@ -40,6 +46,14 @@ namespace poppy {
             p += 1;
         }
         return nullptr;
+    }
+
+    void Heap::showHeap() {
+        Cell * p = firstObject();
+        while (p != nullptr) {
+            showObject(p);
+            p = nextObject(p);
+        }
     }
 
     Builder::Builder(Heap & heap) : 

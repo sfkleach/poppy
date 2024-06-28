@@ -49,7 +49,7 @@ CodePlanter::CodePlanter(Engine & engine) :
     _qblock = _builder.placeHolderJustPlanted();
     _builder.addCell(Cell{});                               // length
     _length = _builder.placeHolderJustPlanted();
-    _builder.addKey(Cell{ .u64 = Cell::ProcedureTag });     // key
+    _builder.addKey(ProcedureKeyValue);     // key
     _builder.addCell(Cell::makeSmall(0));                   // num locals
     _num_locals = _builder.placeHolderJustPlanted();
 }
