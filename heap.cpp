@@ -52,6 +52,7 @@ namespace poppy {
         Cell * p = firstObject();
         while (p != nullptr) {
             showObject(p);
+            std::cout << std::endl;
             p = nextObject(p);
         }
     }
