@@ -4,16 +4,16 @@
 
 namespace poppy {
 
-    void showObject(Cell * p) {
-        if (isProcedure(p)) {
+    void CellRef::showObject() {
+        if (this->isProcedure()) {
             std::cout << "<procedure>";
         } else {
-            std::cout << "<" << std::hex << p->u64 << std::dec << ">";
+            std::cout << "<" << std::hex << (*this)->u64 << std::dec << ">";
         }
     }
 
-    bool isProcedure(Cell * p) {
-        return p->isProcedureKey();
+    CellRef CellRef::offset(ptrdiff_t n) {
+        return CellRef(cellRef + n);
     }
 
 }

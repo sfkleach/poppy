@@ -38,6 +38,34 @@ namespace poppy {
         return nullptr;
     }
 
+    CellRef Heap::nextObject1(CellRef keyCell) {
+        switch (keyCell.cellRef->u64) {
+            case ProcedureKeyValue.u64: {
+                int length = keyCell.offset(ProcedureLayout::LengthOffset)->getSmall();
+                Cell * p = keyCell.cellRef + length;
+                while (p < _working_tip) {
+                    if (p->isKey())
+                        return CellRef( p );
+                    p += 1;
+                }
+                return CellRef();
+            }
+            default:
+                throw Mishap("Unknown key").culprit("Key", keyCell->u64);
+        }
+        return CellRef();
+    }
+
+    CellRef Heap::firstObject1() {
+        Cell * p = _block_start;
+        while (p < _working_tip) {
+            if (p->isKey())
+                return CellRef(p);
+            p += 1;
+        }
+        return CellRef();
+    }
+
     Cell * Heap::firstObject() {
         Cell * p = _block_start;
         while (p < _working_tip) {
@@ -51,7 +79,7 @@ namespace poppy {
     void Heap::showHeap() {
         Cell * p = firstObject();
         while (p != nullptr) {
-            showObject(p);
+            CellRef{.cellRef = p}.showObject();
             std::cout << std::endl;
             p = nextObject(p);
         }

@@ -46,6 +46,27 @@ namespace poppy {
 
     constexpr uint64_t PROCEDURE_KEY_VALUE = (((int)KeyTag::ProcedureKey) << TAG_WIDTH) | (int)Tag::Key;
 
+    class Cell;
+
+    class CellRef {
+    public:
+        CellRef() : cellRef(nullptr) {}
+        CellRef(Cell * cell) : cellRef(cell) {}
+        CellRef(const CellRef & ref) : cellRef(ref.cellRef) {}        
+    public:
+        Cell * cellRef;
+    public:
+        inline Cell * operator->() { return cellRef; }
+        inline Cell & operator*() { return *cellRef; }
+        CellRef offset(ptrdiff_t n);
+    public:
+        inline bool isNull() const { return cellRef == nullptr; }
+        inline bool isKey() const { (cellRef->u64 & TAG_MASK) == (uint64_t)Tag::Key; }
+        inline bool isProcedure() const { cellRef->u64 == PROCEDURE_KEY_VALUE; }
+    public:
+        void showObject();
+    };
+
     class Cell {
     public:
         union __attribute__((packed, aligned(8))) {
@@ -82,7 +103,7 @@ namespace poppy {
         inline UpperTag getUpperTag() const { return (UpperTag)((u64 & BOTH_TAG_MASK) >> TAG_WIDTH); }
         inline unsigned char getWideTag() const { return u64 & BOTH_TAG_MASK; }
         inline Cell * deref() const { return (Cell *)(u64 & ~TAG_MASK); }
-
+        inline CellRef derefRef() const { return CellRef{ .cellRef = (Cell *)(u64 & ~TAG_MASK) }; }
 
     public:
         inline bool isProcedureKey() const { 
@@ -114,9 +135,6 @@ namespace poppy {
         Ident(Cell value) : _value(value) {}
         inline Cell & value() { return _value; }
     };
-
-    void showObject(Cell * p);
-    bool isProcedure(Cell * p);
 
     constexpr Cell FalseValue{ .u64 = FALSE_VALUE };
     constexpr Cell TrueValue{ .u64 = TRUE_VALUE };
