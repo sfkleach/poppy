@@ -21,26 +21,9 @@ namespace poppy {
         _working_limit = _block_start + capacity / 2;
     }
 
-    Cell * Heap::nextObject(Cell * keyCell) {
-        switch (keyCell->u64) {
-            case ProcedureKeyValue.u64: {
-                Cell * p = keyCell + (keyCell + ProcedureLayout::LengthOffset)->getSmall();
-                while (p < _working_tip) {
-                    if (p->isKey())
-                        return p;
-                    p += 1;
-                }
-                return nullptr;
-            }
-            default:
-                throw Mishap("Unknown key").culprit("Key", keyCell->u64);
-        }
-        return nullptr;
-    }
-
-    CellRef Heap::nextObject1(CellRef keyCell) {
-        switch (keyCell.cellRef->u64) {
-            case ProcedureKeyValue.u64: {
+    CellRef Heap::nextObject(CellRef keyCell) {
+        switch (keyCell.keyCode()) {
+            case KeyCode::ProcedureKeyCode: {
                 int length = keyCell.offset(ProcedureLayout::LengthOffset)->getSmall();
                 Cell * p = keyCell.cellRef + length;
                 while (p < _working_tip) {
@@ -56,7 +39,7 @@ namespace poppy {
         return CellRef();
     }
 
-    CellRef Heap::firstObject1() {
+    CellRef Heap::firstObject() {
         Cell * p = _block_start;
         while (p < _working_tip) {
             if (p->isKey())
@@ -66,19 +49,9 @@ namespace poppy {
         return CellRef();
     }
 
-    Cell * Heap::firstObject() {
-        Cell * p = _block_start;
-        while (p < _working_tip) {
-            if (p->isKey())
-                return p;
-            p += 1;
-        }
-        return nullptr;
-    }
-
     void Heap::showHeap() {
-        Cell * p = firstObject();
-        while (p != nullptr) {
+        CellRef p = firstObject();
+        while (p.isntNull()) {
             CellRef(p).showObject();
             std::cout << std::endl;
             p = nextObject(p);

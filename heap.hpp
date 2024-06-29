@@ -22,10 +22,8 @@ namespace poppy {
         friend class Builder;
 
     public:
-        Cell * nextObject(Cell * keyPtr);
-        Cell * firstObject();
-        CellRef nextObject1(CellRef keyPtr);
-        CellRef firstObject1();
+        CellRef nextObject(CellRef keyPtr);
+        CellRef firstObject();
 
     public:
         void showHeap();

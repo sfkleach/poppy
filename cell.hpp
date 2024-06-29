@@ -39,14 +39,14 @@ namespace poppy {
     constexpr uint64_t TRUE_VALUE = (((int)UpperTag::True) << TAG_WIDTH) | (int)Tag::Small;
 
     //  System keys
-    enum class KeyTag {
-        KeyKey,             // 0000_0011 <- Key key
-        ProcedureKey,       // 0000_1011 <- Procedure key
-        BooleanKey,         // 0001_0011 <- Boolean key
-        IntVectorKey,       // 0001_1011 <- Int vector key
+    enum class KeyCode {
+        KeyKeyCode,             // 0000_0011 <- Key key
+        ProcedureKeyCode,       // 0000_1011 <- Procedure key
+        BooleanKeyCode,         // 0001_0011 <- Boolean key
+        IntKeyCode,             // 0001_1011 <- Int vector key
     };
 
-    constexpr uint64_t PROCEDURE_KEY_VALUE = (((int)KeyTag::ProcedureKey) << TAG_WIDTH) | (int)Tag::Key;
+    constexpr uint64_t PROCEDURE_KEY_VALUE = (((int)KeyCode::ProcedureKeyCode) << TAG_WIDTH) | (int)Tag::Key;
 
 
     class Cell {
@@ -86,6 +86,7 @@ namespace poppy {
         inline unsigned char getWideTag() const { return u64 & BOTH_TAG_MASK; }
         inline Cell * deref() const { return (Cell *)(u64 & ~TAG_MASK); }
 
+
     public:
         inline bool isProcedureKey() const { 
             return u64 == PROCEDURE_KEY_VALUE;
@@ -104,6 +105,7 @@ namespace poppy {
         inline bool isntFalse() const { return ( u64 & 0xF ) != ( FALSE_VALUE & 0xF ); }
         inline bool isTaggedPtr() const { return (u64 & TAG_MASK) == (int)Tag::TaggedPtr; }
         inline bool isKey() const { return (u64 & TAG_MASK) == (int)Tag::Key; }
+        inline KeyCode keyCode() const ;
 
     public:
         void showObject();
@@ -122,8 +124,10 @@ namespace poppy {
         CellRef offset(std::ptrdiff_t n);
     public:
         inline bool isNull() const { return cellRef == nullptr; }
+        inline bool isntNull() const { return cellRef != nullptr; }
         inline bool isKey() const { return (cellRef->u64 & TAG_MASK) == (uint64_t)Tag::Key; }
         inline bool isProcedure() const { return cellRef->u64 == PROCEDURE_KEY_VALUE; }
+        inline KeyCode keyCode() const { return static_cast<KeyCode>((cellRef->u64 >> TAG_WIDTH) & 0xFFFFFFFF); }
     public:
         void showObject();
     };
@@ -140,7 +144,7 @@ namespace poppy {
     constexpr Cell FalseValue{ .u64 = FALSE_VALUE };
     constexpr Cell TrueValue{ .u64 = TRUE_VALUE };
     constexpr Cell ProcedureKeyValue{ .u64 = PROCEDURE_KEY_VALUE };
-    constexpr Cell BooleanKeyValue{ .u64 = (((int)KeyTag::BooleanKey) << TAG_WIDTH) | (int)Tag::Key };
+    constexpr Cell BooleanKeyValue{ .u64 = (((int)KeyCode::BooleanKeyCode) << TAG_WIDTH) | (int)Tag::Key };
 }
 
 #endif
