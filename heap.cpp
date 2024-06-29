@@ -79,7 +79,7 @@ namespace poppy {
     void Heap::showHeap() {
         Cell * p = firstObject();
         while (p != nullptr) {
-            CellRef{.cellRef = p}.showObject();
+            CellRef(p).showObject();
             std::cout << std::endl;
             p = nextObject(p);
         }
