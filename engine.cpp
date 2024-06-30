@@ -338,6 +338,7 @@ namespace poppy {
         } else if (p.isProcedure()) {
             Cell * pk = p.deref();
             std::cout << "  Procedure" << std::endl;
+            std::cout << "    ProcName : " << this->getSymbolName(CellRef(pk).procName()) << std::endl;
             std::cout << "    NumLocals: " << (pk + ProcedureLayout::NumLocalsOffset)->u64 << std::endl;
             int pl = (pk + ProcedureLayout::LengthOffset)->getSmall();
             std::cout << "    Length   : " << pl << std::endl;
@@ -364,6 +365,26 @@ namespace poppy {
         for (auto & [name, ident] : _runtime->_dictionary) {
             std::cout << name << ":" << std::endl;
             multiLineDisplay(ident->value());
+        }
+    }
+
+    void Engine::showObject(const CellRef p) {
+        if (p.isProcedure()) {
+            Cell c = p.procName();
+            const std::string & name = this->getSymbolName(c);
+            std::cout << "<procedure " << name << ">";
+        } else {
+            std::cout << "<" << std::hex << p.u64() << std::dec << ">";
+        }
+    }
+
+    void Engine::showHeap() {
+        Heap & heap = getHeap();
+        CellRef p = heap.firstObject();
+        while (p.isntNull()) {
+            this->showObject(p);
+            std::cout << std::endl;
+            p = heap.nextObject(p);
         }
     }
 

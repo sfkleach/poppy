@@ -24,9 +24,6 @@ namespace poppy {
     public:
         CellRef nextObject(CellRef keyPtr);
         CellRef firstObject();
-
-    public:
-        void showHeap();
     };
 
     class Builder {

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstddef>
 
+#include "layout.hpp"
 
 namespace poppy {
 
@@ -116,6 +117,11 @@ namespace poppy {
         }
 
     public:
+        inline int getSymbolIndex() const {
+            return (u64 >> BOTH_WIDTH);
+        }
+
+    public:
         inline bool isSmall() const { return getTag() == Tag::Small; }
         inline int getSmall() const { return i64 >> TAG_WIDTH; }
 
@@ -126,8 +132,6 @@ namespace poppy {
         inline bool isKey() const { return (u64 & TAG_MASK) == (int)Tag::Key; }
         inline KeyCode keyCode() const ;
 
-    public:
-        void showObject();
     };
 
     class CellRef {
@@ -142,10 +146,13 @@ namespace poppy {
         inline Cell & operator*() { return *cellRef; }
         CellRef offset(std::ptrdiff_t n);
     public:
+        inline uint64_t u64() const { return cellRef->u64; }
+    public:
         inline bool isNull() const { return cellRef == nullptr; }
         inline bool isntNull() const { return cellRef != nullptr; }
         inline bool isKey() const { return (cellRef->u64 & TAG_MASK) == (uint64_t)Tag::Key; }
         inline bool isProcedure() const { return cellRef->u64 == PROCEDURE_KEY_VALUE; }
+        inline Cell procName() const { return cellRef[ProcedureLayout::ProcNameOffset]; }
         inline KeyCode keyCode() const { return static_cast<KeyCode>((cellRef->u64 >> TAG_WIDTH) & 0xFFFFFFFF); }
     public:
         void showObject();

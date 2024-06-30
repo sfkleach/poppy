@@ -3,7 +3,7 @@
 
 class ProcedureLayout {
 public:
-    static const int ProcName = -3;
+    static const int ProcNameOffset = -3;
     static const int QBlockOffset = -2;
     static const int LengthOffset = -1;
     static const int KeyOffsetFromStart = 3;

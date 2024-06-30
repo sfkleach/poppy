@@ -111,9 +111,18 @@ public:
 
 public:
     void debugDisplay();
-    void showHeap() { _runtime->_heap.showHeap(); }
+
 private:
     void multiLineDisplay(Cell p);
+    void showObject(const CellRef p);
+
+public:
+    void showHeap();
+
+    std::string & getSymbolName(Cell c) {
+        int n = c.getSymbolIndex();
+        return _runtime->_symbols[n];
+    }
 };
 
 } // namespace poppy

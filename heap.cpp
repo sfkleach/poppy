@@ -49,15 +49,6 @@ namespace poppy {
         return CellRef();
     }
 
-    void Heap::showHeap() {
-        CellRef p = firstObject();
-        while (p.isntNull()) {
-            CellRef(p).showObject();
-            std::cout << std::endl;
-            p = nextObject(p);
-        }
-    }
-
     Builder::Builder(Heap & heap) : 
         _heap(heap)
     {
