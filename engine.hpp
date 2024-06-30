@@ -46,9 +46,18 @@ enum class Instruction {
 // has and the bitmask indicates which arguments are tagged pointers.
 const char * instructionInfo( const Instruction inst, int & nargs, unsigned int & bitmask );
 
+class Runtime {
+    friend class Engine;
+private:
+    std::map<std::string, RefIdent> _dictionary;
+    Heap _heap;
+};
+
+// TODO: This will become the couroutine class.
 class Engine {
     friend class CodePlanter;
 private:
+    // TODO: This should be moved into the runtime class.
     std::map<Instruction, void *> _opcode_map;
     Cell _exit_code[1];
 
@@ -58,12 +67,20 @@ private:
     Cell * currentProcedure;
     std::vector<Cell> _callStack;
 
-    std::map<std::string, RefIdent> _dictionary;
-    Heap _heap;
+    std::shared_ptr<Runtime> _runtime;
 
     XRootsRegistry _xrootsRegistry;
 
 public:
+    Engine() {
+        _runtime = std::make_shared<Runtime>();
+    }
+
+    ~Engine() = default;
+
+public:
+    Heap & getHeap() { return _runtime->_heap; }
+    std::map<std::string, RefIdent> & getDictionary() { return _runtime->_dictionary; }
     void declareGlobal(const std::string & name);
 
 private:
@@ -78,7 +95,7 @@ public:
 
 public:
     void debugDisplay();
-    void showHeap() { _heap.showHeap(); }
+    void showHeap() { _runtime->_heap.showHeap(); }
 private:
     void multiLineDisplay(Cell p);
 };

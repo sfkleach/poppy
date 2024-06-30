@@ -43,7 +43,7 @@ void Label::setLabel() {
 
 CodePlanter::CodePlanter(Engine & engine) : 
     _engine(engine),
-    _builder(engine._heap)
+    _builder(engine.getHeap())
 {
     _builder.addCell(Cell{});                               // qblock
     _qblock = _builder.placeHolderJustPlanted();
@@ -109,10 +109,11 @@ void CodePlanter::addRawUInt(uint64_t n) {
 
 void CodePlanter::addGlobal(const std::string & name, Instruction inst) {
     addInstruction(inst);
-    if (_engine._dictionary.find(name) == _engine._dictionary.end()) {
+    auto & dict = _engine.getDictionary();
+    if (dict.find(name) == dict.end()) {
         std::cerr << "Global not declared: " << name << std::endl;
     }
-    _builder.addCell(Cell::makeRefIdent(_engine._dictionary[name]));
+    _builder.addCell(Cell::makeRefIdent(dict[name]));
 }
 
 void CodePlanter::addLocal(const std::string & varname, Instruction inst) {
@@ -201,7 +202,7 @@ void CodePlanter::buildAndBind(const std::string & name) {
     }
 
     Cell * c = _builder.object();
-    _engine._dictionary[name]->value() = Cell::makePtr(c);
+    _engine.getDictionary()[name]->value() = Cell::makePtr(c);
 }
 
 Label CodePlanter::newLabel() {

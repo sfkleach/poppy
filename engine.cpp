@@ -74,11 +74,12 @@ namespace poppy {
     }
 
     void Engine::declareGlobal(const std::string & name) {
-        if (_dictionary.find(name) != _dictionary.end()) {
+        auto & d = _runtime->_dictionary;
+        if (d.find(name) != d.end()) {
             std::cerr << "Redeclaring global: " << name << std::endl;
         }
         Ident * ident = new Ident(Cell::makeSmall(0));
-        _dictionary[name] = ident;
+        d[name] = ident;
     }
 
     void Engine::init_or_run(Cell * pc, bool init) {
@@ -320,7 +321,8 @@ namespace poppy {
     }
 
     void Engine::run(const std::string & main) {
-        Ident * idptr = _dictionary[main];
+        auto & dictionary = _runtime->_dictionary;
+        Ident * idptr = dictionary[main];
         Ident id = *idptr;
         Cell m = id.value();
         if (m.isProcedure()) {
@@ -359,7 +361,7 @@ namespace poppy {
         }
         std::cout << std::endl;
         std::cout << "Dictionary" << std::endl;
-        for (auto & [name, ident] : _dictionary) {
+        for (auto & [name, ident] : _runtime->_dictionary) {
             std::cout << name << ":" << std::endl;
             multiLineDisplay(ident->value());
         }
