@@ -58,7 +58,7 @@ private:
     Cell * currentProcedure;
     std::vector<Cell> _callStack;
 
-    std::map<std::string, RefIdent> _symbolTable;
+    std::map<std::string, RefIdent> _dictionary;
     Heap _heap;
 
     XRootsRegistry _xrootsRegistry;

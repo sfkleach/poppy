@@ -109,10 +109,10 @@ void CodePlanter::addRawUInt(uint64_t n) {
 
 void CodePlanter::addGlobal(const std::string & name, Instruction inst) {
     addInstruction(inst);
-    if (_engine._symbolTable.find(name) == _engine._symbolTable.end()) {
+    if (_engine._dictionary.find(name) == _engine._dictionary.end()) {
         std::cerr << "Global not declared: " << name << std::endl;
     }
-    _builder.addCell(Cell::makeRefIdent(_engine._symbolTable[name]));
+    _builder.addCell(Cell::makeRefIdent(_engine._dictionary[name]));
 }
 
 void CodePlanter::addLocal(const std::string & varname, Instruction inst) {
@@ -201,7 +201,7 @@ void CodePlanter::buildAndBind(const std::string & name) {
     }
 
     Cell * c = _builder.object();
-    _engine._symbolTable[name]->value() = Cell::makePtr(c);
+    _engine._dictionary[name]->value() = Cell::makePtr(c);
 }
 
 Label CodePlanter::newLabel() {
