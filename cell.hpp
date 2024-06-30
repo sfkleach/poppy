@@ -30,13 +30,22 @@ namespace poppy {
     constexpr unsigned int BOTH_WIDTH = TAG_WIDTH + UPPER_TAG_WIDTH;
     constexpr unsigned int BOTH_TAG_MASK = 0xFF;
 
+    // The upper tag is used to implement a range of literal values that 
+    // fit into 56 bits. The lower 8 bits are used to store the tag and 
+    // upper tag.
+    // 
+    // Exceptionally, the first 2 values are used for false and true because
+    // they are so common. This means that they can be tested with a simple
+    // 8-bit mask. 
     enum class UpperTag {
-        False,              // 0000_0100 <- Unique false value
-        True,               // 0000_1100 <- True
+        False,              // 0000_0100 <- Unique Talse value. 56-bit payload not used!
+        True,               // 0000_1100 <- Unique True value. 56-bit payload not used!
+        Sentinel,           // 0001_0100 <- Sentinels. Other singleton constants.
+        Symbol              // 0001_1100 <- Symbols. 56-bit payload is an index into the symbol table.
     };
 
-    constexpr uint64_t FALSE_VALUE = (((int)UpperTag::False) << TAG_WIDTH) | (int)Tag::Special;
-    constexpr uint64_t TRUE_VALUE = (((int)UpperTag::True) << TAG_WIDTH) | (int)Tag::Small;
+    constexpr uint64_t FALSE_VALUE = (static_cast<int>(UpperTag::False) << TAG_WIDTH) | static_cast<int>(Tag::Special);
+    constexpr uint64_t TRUE_VALUE  = (static_cast<int>(UpperTag::True) << TAG_WIDTH) | static_cast<int>(Tag::Small);
 
     //  System keys
     enum class KeyCode {
@@ -44,6 +53,7 @@ namespace poppy {
         ProcedureKeyCode,       // 0000_1011 <- Procedure key
         BooleanKeyCode,         // 0001_0011 <- Boolean key
         IntKeyCode,             // 0001_1011 <- Int vector key
+        SymbolCode,             // 0010_1011 <- Symbol key
     };
 
     constexpr uint64_t PROCEDURE_KEY_VALUE = (((int)KeyCode::ProcedureKeyCode) << TAG_WIDTH) | (int)Tag::Key;
@@ -79,13 +89,22 @@ namespace poppy {
         inline static Cell makeI64( int64_t n ) {
             return Cell{ .i64 = n };
         }
+
+        inline static Cell makeSymbol( std::size_t n ) {
+            constexpr uint8_t SymbolWideTag = (static_cast<uint8_t>(UpperTag::Symbol) << TAG_WIDTH) | static_cast<uint8_t>(Tag::Special);
+            return Cell{ .u64 = ( (n << BOTH_WIDTH) | SymbolWideTag ) };
+        }
         
     public:
         inline Tag getTag() const { return (Tag)(u64 & TAG_MASK); }
         inline UpperTag getUpperTag() const { return (UpperTag)((u64 & BOTH_TAG_MASK) >> TAG_WIDTH); }
-        inline unsigned char getWideTag() const { return u64 & BOTH_TAG_MASK; }
+        inline uint8_t getWideTag() const { return u64 & BOTH_TAG_MASK; }
         inline Cell * deref() const { return (Cell *)(u64 & ~TAG_MASK); }
 
+    public:
+        inline bool IsBoolean() const {
+            return (static_cast<uint8_t>(u64) & 0b11110111) == static_cast<uint8_t>(FALSE_VALUE);
+        }
 
     public:
         inline bool isProcedureKey() const { 

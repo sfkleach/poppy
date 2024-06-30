@@ -45,6 +45,8 @@ CodePlanter::CodePlanter(Engine & engine) :
     _engine(engine),
     _builder(engine.getHeap())
 {
+    _builder.addCell(Cell{});                               // proc name
+    _proc_name = _builder.placeHolderJustPlanted();    
     _builder.addCell(Cell{});                               // qblock
     _qblock = _builder.placeHolderJustPlanted();
     _builder.addCell(Cell{});                               // length
@@ -165,6 +167,7 @@ Cell * CodePlanter::build() {
         this->addRawUInt(q);
     }
 
+
     _length.setCell( Cell::makeSmall( _builder.size() - ProcedureLayout::KeyOffsetFromStart) );
     _num_locals.setCell( Cell::makeU64(max_level) );
 
@@ -191,6 +194,8 @@ void CodePlanter::buildAndBind(const std::string & name) {
         this->addRawUInt(q);
     }
 
+    auto symN = _engine.symbolIndex(name);
+    _proc_name.setCell( Cell::makeSymbol(symN) );
     _length.setCell( Cell::makeSmall( _builder.size() - ProcedureLayout::KeyOffsetFromStart ) );
     _num_locals.setCell( Cell::makeU64(max_level) );
 

@@ -44,6 +44,7 @@ private:
     PlaceHolder _length;
     PlaceHolder _qblock;
     PlaceHolder _num_locals;
+    PlaceHolder _proc_name;
 
     //  Locals
     std::vector<std::string> locals;
