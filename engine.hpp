@@ -51,6 +51,8 @@ class Runtime {
 private:
     std::map<std::string, RefIdent> _dictionary;
     Heap _heap;
+    std::map<int, const std::string> _symbols;
+    std::map<const std::string, int> _symbolIndex;
 };
 
 // TODO: This will become the couroutine class.
@@ -77,6 +79,10 @@ public:
     }
 
     ~Engine() = default;
+
+public:
+    const std::string & symbol(int index) const { return _runtime->_symbols[index]; }
+    int symbolIndex(const std::string & name) const { return _runtime->_symbolIndex[name]; }
 
 public:
     Heap & getHeap() { return _runtime->_heap; }
