@@ -34,7 +34,7 @@ namespace poppy {
                 return CellRef();
             }
             default:
-                throw Mishap("Unknown key").culprit("Key", keyCell->u64);
+                throw Mishap("Unknown key").culprit("Key", static_cast<unsigned long>(keyCell->u64));
         }
         return CellRef();
     }
