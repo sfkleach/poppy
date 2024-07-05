@@ -97,11 +97,12 @@ namespace poppy {
         }
         
     public:
-        inline Tag getTag() const { return (Tag)(u64 & TAG_MASK); }
-        inline UpperTag getUpperTag() const { return (UpperTag)((u64 & BOTH_TAG_MASK) >> TAG_WIDTH); }
+        inline Tag getTag() const { return static_cast<Tag>(u64 & TAG_MASK); }
+        inline UpperTag getUpperTag() const { return static_cast<UpperTag>((u64 & BOTH_TAG_MASK) >> TAG_WIDTH); }
         inline uint8_t getWideTag() const { return u64 & BOTH_TAG_MASK; }
         inline Cell * deref() const { return (Cell *)(u64 & ~TAG_MASK); }
-
+        inline bool isForwarded() const { return getTag() == Tag::EvacuatedObject; }
+        
     public:
         inline bool IsBoolean() const {
             return (static_cast<uint8_t>(u64) & 0b11110111) == static_cast<uint8_t>(FALSE_VALUE);
@@ -148,14 +149,18 @@ namespace poppy {
     public:
         inline uint64_t u64() const { return cellRef->u64; }
     public:
+        inline Tag getTag() const { return static_cast<Tag>(cellRef->u64 & TAG_MASK); }
+        inline bool isForwarded() const { return getTag() == Tag::EvacuatedObject; }
         inline bool isNull() const { return cellRef == nullptr; }
         inline bool isntNull() const { return cellRef != nullptr; }
-        inline bool isKey() const { return (cellRef->u64 & TAG_MASK) == (uint64_t)Tag::Key; }
+        inline bool isKey() const { return (cellRef->u64 & TAG_MASK) == static_cast<uint64_t>(Tag::Key); }
+        inline KeyCode getKeyCode() const { return static_cast<KeyCode>((cellRef->u64 >> TAG_WIDTH) & 0xFFFFFFFF); }
         inline bool isProcedure() const { return cellRef->u64 == PROCEDURE_KEY_VALUE; }
         inline Cell procName() const { return cellRef[ProcedureLayout::ProcNameOffset]; }
         inline KeyCode keyCode() const { return static_cast<KeyCode>((cellRef->u64 >> TAG_WIDTH) & 0xFFFFFFFF); }
     public:
         void showObject();
+        void boundaries(Cell * & start, Cell * & end);
     };
 
 

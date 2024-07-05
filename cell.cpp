@@ -19,4 +19,17 @@ namespace poppy {
         }
     }
 
+    void CellRef::boundaries(Cell * & start, Cell * & end) {
+        switch (this->getKeyCode()) {
+            case KeyCode::ProcedureKeyCode: {
+                int length = this->offset(ProcedureLayout::LengthOffset)->getSmall();
+                start = cellRef - ProcedureLayout::KeyOffsetFromStart;
+                end = cellRef + length;
+                break;
+            }
+            default:
+                throw std::runtime_error("Unknown key code");
+        }
+    }
+
 }

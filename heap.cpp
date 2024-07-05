@@ -8,17 +8,25 @@
 
 namespace poppy {
 
+    constexpr std::size_t kapacity = 1024;
+
     Heap::Heap()
     {
-        size_t capacity = 1024;
-        _block_start = (Cell *)aligned_alloc(sizeof(Cell), capacity);
+        _block_start = (Cell *)aligned_alloc(sizeof(Cell), kapacity);
         if (_block_start == nullptr ) {
             throw std::runtime_error("Cannot allocate heap store");
         }
         
-        _block_end = _block_start + capacity;
+        _scanned_sofar = _block_start;
+        _block_end = _block_start + kapacity;
         _working_tip = _block_start;
-        _working_limit = _block_start + capacity / 2;
+        _working_limit = _block_start + kapacity / 2;
+    }
+
+    void Heap::clear() {
+        _scanned_sofar = _block_start;
+        _working_tip = _block_start;
+        _working_limit = _block_start + kapacity / 2;
     }
 
     CellRef Heap::nextObject(CellRef keyCell) {

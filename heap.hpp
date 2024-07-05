@@ -14,6 +14,7 @@ namespace poppy {
         Cell * _block_end;
         Cell * _working_tip;
         Cell * _working_limit;
+        Cell * _scanned_sofar;
 
     public:
         Heap();
@@ -22,6 +23,7 @@ namespace poppy {
         friend class Builder;
 
     public:
+        void clear();
         CellRef nextObject(CellRef keyPtr);
         CellRef firstObject();
     };
