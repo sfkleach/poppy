@@ -18,6 +18,7 @@
 #include "mishap.hpp"
 #include "layout.hpp"
 #include "xroots.hpp"
+#include "iscanner.hpp"
 
 namespace poppy {
 
@@ -53,6 +54,8 @@ private:
     Heap _heap;
     std::map<std::size_t, std::string> _symbols;
     std::map<const std::string, std::size_t> _symbolIndex;
+public:
+    void scanRoots(IScanner & scanner);
 };
 
 // TODO: This will become the couroutine class.
@@ -123,6 +126,8 @@ public:
         int n = c.getSymbolIndex();
         return _runtime->_symbols[n];
     }
+
+    void scanRoots(IScanner & scanner);
 };
 
 } // namespace poppy

@@ -24,10 +24,27 @@ namespace poppy {
         _working_limit = _block_start + kapacity / 2;
     }
 
+    Heap::~Heap() {
+        free(_block_start);
+    }
+
     void Heap::clear() {
         _scan_queue = _block_start;
         _working_tip = _block_start;
         _working_limit = _block_start + kapacity / 2;
+    }
+
+    CellRef Heap::popEnqueuedObject(Cell * & start, Cell * & end) {
+        if (_scan_queue >= _working_tip) {
+            start = nullptr;
+            end = nullptr;
+            return CellRef();
+        } else {
+
+            CellRef object = nextObject(CellRef(_scan_queue));
+            object.boundaries(start, end);
+            return object;
+        }
     }
 
     CellRef Heap::nextObject(CellRef keyCell) {

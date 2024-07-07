@@ -388,4 +388,22 @@ namespace poppy {
         }
     }
 
+    void Engine::scanRoots(IScanner & scanner) {
+        for (auto & cell : _valueStack) {
+            scanner.update(cell);
+        }
+        // TODO: this is clearly wrong!
+        for (auto & cell : _callStack) {
+            //scanner.update(cell);
+        }
+        //  TODO: when we have multiple engines, this has to change.
+        _runtime->scanRoots(scanner);
+    }
+
+    void Runtime::scanRoots(IScanner & scanner) {
+        for (auto & [name, ident] : _dictionary) {
+            scanner.update(ident->value());
+        }
+    }
+
 } // namespace poppy
