@@ -10,26 +10,39 @@ class Scanner {
 private:
     Heap & _from_space;
     Heap & _to_space;
+    ptrdiff_t _offset;
 
 public:
     Scanner(Heap & from_space, Heap & to_space) : _from_space(from_space), _to_space(to_space) {
         to_space.clear();
+        _offset = _to_space.blockStart() -_from_space.blockStart();
     }
 
 public:
     void update(Cell & root) {
-        if (root.isTaggedPtr() && root.deref()->isForwarded()) {
-            Cell * new_location = forwardObject(root.deref());
-            root = Cell::makePtr(new_location);
+        if (root.isTaggedPtr()) {
+            CellRef object(root.deref());
+            if (object.isForwarded()) {
+                root = Cell::makePtr(object->deref());
+            } else if (object.isTaggedPtr()) {
+                Cell * new_location = forwardObject(object);
+                root = Cell::makeForwarded(new_location);
+            }
         }
     }
 
-    void forwardObject(Cell * object) {
+    Cell * forwardObject(CellRef object) {
         Cell * start;
         Cell * end;
-        object->boundaries(start, end);
+        object.boundaries(start, end);
+        Cell * new_start = _to_space.copyRange(start, end);
+        Cell * new_object = new_start + (object.cellRef - start);
+        Cell * offset_adjusted = new_object - _offset;
+        return offset_adjusted;
+    }
 
-        
+    void copyBackSpace() {
+        _from_space.overwrite(_to_space);
     }
 };
 

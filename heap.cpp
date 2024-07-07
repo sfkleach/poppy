@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <iostream>
+#include <cstring> // for std::memcpy
 
 #include "heap.hpp"
 #include "mishap.hpp"
@@ -17,14 +18,14 @@ namespace poppy {
             throw std::runtime_error("Cannot allocate heap store");
         }
         
-        _scanned_sofar = _block_start;
+        _scan_queue = _block_start;
         _block_end = _block_start + kapacity;
         _working_tip = _block_start;
         _working_limit = _block_start + kapacity / 2;
     }
 
     void Heap::clear() {
-        _scanned_sofar = _block_start;
+        _scan_queue = _block_start;
         _working_tip = _block_start;
         _working_limit = _block_start + kapacity / 2;
     }
@@ -55,6 +56,20 @@ namespace poppy {
             p += 1;
         }
         return CellRef();
+    }
+
+    Cell * Heap::copyRange(Cell * start, Cell * end) {
+        Cell * tip = _working_tip;
+        ptrdiff_t delta = end - start;
+        std::memcpy(_working_tip, start, delta * sizeof(Cell));
+        _working_tip += delta;
+        return tip;
+    }
+
+    void Heap::overwrite(const Heap & other) {
+        ptrdiff_t delta = other._working_tip - other._block_start;
+        _working_tip = _block_start + delta;
+        std::memcpy(_block_start, other._block_start, delta * sizeof(Cell));
     }
 
     Builder::Builder(Heap & heap) : 

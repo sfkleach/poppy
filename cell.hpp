@@ -83,6 +83,10 @@ namespace poppy {
             return Cell{ .u64 = ((uint64_t)ptr | (int)Tag::TaggedPtr) };
         }
 
+        inline static Cell makeForwarded( Cell * ptr ) {
+            return Cell{ .u64 = ((uint64_t)ptr | (int)Tag::EvacuatedObject) };
+        }
+
         inline static Cell makeU64( uint64_t n ) {
             return Cell{ .u64 = n };
         }
@@ -151,6 +155,7 @@ namespace poppy {
     public:
         inline Tag getTag() const { return static_cast<Tag>(cellRef->u64 & TAG_MASK); }
         inline bool isForwarded() const { return getTag() == Tag::EvacuatedObject; }
+        inline bool isTaggedPtr() const { return getTag() == Tag::TaggedPtr; }
         inline bool isNull() const { return cellRef == nullptr; }
         inline bool isntNull() const { return cellRef != nullptr; }
         inline bool isKey() const { return (cellRef->u64 & TAG_MASK) == static_cast<uint64_t>(Tag::Key); }
