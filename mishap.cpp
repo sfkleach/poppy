@@ -29,12 +29,17 @@ Mishap & Mishap::cause( Mishap & problem ) {
 	return *this;
 }
 
-Mishap & Mishap::culprit( const std::string reason, const std::string arg ) {
+Mishap & Mishap::culprit( const std::string & reason, const std::string & arg ) {
 	this->culprits.push_back( pair< const string, const string >( reason, arg ) );
 	return *this;
 }
 
-Mishap & Mishap::culprit( const char * reason, const std::string arg ) {
+Mishap & Mishap::culprit( const char * reason, const std::string & arg ) {
+	this->culprits.push_back( pair< const string, const string >( reason, arg ) );
+	return *this;
+}
+
+Mishap & Mishap::culprit1( const char * reason, const std::string & arg ) {
 	this->culprits.push_back( pair< const string, const string >( reason, arg ) );
 	return *this;
 }
@@ -44,7 +49,7 @@ Mishap & Mishap::culprit( const char * reason, const char * arg ) {
 	return *this;
 }
 
-Mishap & Mishap::culprit( const std::string reason, const signed long N ) {
+Mishap & Mishap::culprit( const std::string & reason, const uint64_t N ) {
 	std::ostringstream s;
 	s << N;
 	const std::string result( s.str() );
@@ -52,7 +57,7 @@ Mishap & Mishap::culprit( const std::string reason, const signed long N ) {
 	return *this;
 }
 
-Mishap & Mishap::culprit( const std::string reason, const uint64_t N ) {
+Mishap & Mishap::culprit( const std::string & reason, const int64_t N ) {
 	std::ostringstream s;
 	s << N;
 	const std::string result( s.str() );
@@ -60,7 +65,7 @@ Mishap & Mishap::culprit( const std::string reason, const uint64_t N ) {
 	return *this;
 }
 
-Mishap & Mishap::culprit( const std::string reason, const int64_t N ) {
+Mishap & Mishap::culprit( const std::string & reason, const double N ) {
 	std::ostringstream s;
 	s << N;
 	const std::string result( s.str() );
@@ -68,39 +73,7 @@ Mishap & Mishap::culprit( const std::string reason, const int64_t N ) {
 	return *this;
 }
 
-Mishap & Mishap::culprit( const std::string reason, const unsigned long N ) {
-	std::ostringstream s;
-	s << N;
-	const std::string result( s.str() );
-	this->culprits.push_back( pair< const string, const string >( reason, result ) );
-	return *this;
-}
-
-Mishap & Mishap::culprit( const std::string reason, const signed int N ) {
-	std::ostringstream s;
-	s << N;
-	const std::string result( s.str() );
-	this->culprits.push_back( pair< const string, const string >( reason, result ) );
-	return *this;
-}
-
-Mishap & Mishap::culprit( const std::string reason, const unsigned int N ) {
-	std::ostringstream s;
-	s << N;
-	const std::string result( s.str() );
-	this->culprits.push_back( pair< const string, const string >( reason, result ) );
-	return *this;
-}
-
-Mishap & Mishap::culprit( const std::string reason, const double N ) {
-	std::ostringstream s;
-	s << N;
-	const std::string result( s.str() );
-	this->culprits.push_back( pair< const string, const string >( reason, result ) );
-	return *this;
-}
-
-Mishap & Mishap::culpritChar( const std::string reason, const char N ) {
+Mishap & Mishap::culpritChar( const std::string & reason, const char N ) {
 	std::ostringstream s;
 	s << "character " << N;
 	const std::string result( s.str() );

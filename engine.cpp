@@ -328,7 +328,7 @@ namespace poppy {
         if (m.isProcedure()) {
             run(m.deref());
         } else {
-            throw Mishap("Trying to call non-procedure").culprit("Entry point", main);
+            throw Mishap("Trying to call non-procedure").culprit1("Entry point", main);
         }
     }
 
