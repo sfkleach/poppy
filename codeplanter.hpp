@@ -35,13 +35,14 @@ public:
     void setLabel();
 };
 
+
 class CodePlanter {
 
 private:
     Engine & _engine;
     Builder _builder;
     PlaceHolder _length;
-    PlaceHolder _qblock;
+    PlaceHolder _qblock;        // Offset to block of offsets of 'quoted' ptrs.
     PlaceHolder _num_locals;
     PlaceHolder _proc_name;
 
@@ -51,7 +52,7 @@ private:
     size_t max_level = 0;
     std::vector<PlaceHolder> local_fixups;
 
-    // Pointer offsets
+    // Offsets to the internal 'quoted' pointers.
     std::vector<int>  _q_offsets;
 
     // We allocate as many extra roots as we need during code-planting and

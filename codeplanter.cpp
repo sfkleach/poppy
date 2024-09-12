@@ -47,11 +47,15 @@ CodePlanter::CodePlanter(Engine & engine) :
 {
     _builder.addCell(Cell{});                               // proc name
     _proc_name = _builder.placeHolderJustPlanted();    
+    
     _builder.addCell(Cell{});                               // qblock
     _qblock = _builder.placeHolderJustPlanted();
+    
     _builder.addCell(Cell{});                               // length
     _length = _builder.placeHolderJustPlanted();
-    _builder.addKey(ProcedureKeyValue);     // key
+
+    _builder.addKey(ProcedureKeyValue);                     // key
+
     _builder.addCell(Cell::makeSmall(0));                   // num locals
     _num_locals = _builder.placeHolderJustPlanted();
 }
