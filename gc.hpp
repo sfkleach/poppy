@@ -20,7 +20,7 @@ namespace poppy {
         }
 
     public:
-        void forwardRoot(Cell & root);
+        virtual void forwardRoot(Cell & root);
 
         void scanObject(CellRef object);
 
