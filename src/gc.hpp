@@ -38,6 +38,9 @@ namespace poppy {
         GarbageCollector(Engine & engine) : _engine(engine) {}
 
         void gc();
+
+        //  Expand to ensure we have at least ncells available.
+        void expand(size_t ncells);
     };
 
 } // namespace poppy

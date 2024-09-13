@@ -31,7 +31,7 @@ public:
 
 ## cell.hpp
 
-Add a `VectorKeyCode` and `VECTOR_KEY_VALUE`.
+Add a `VectorKeyCode`, `VECTOR_KEY_VALUE` and `VectorKeyValue`.
 
 ```cpp
     enum class KeyCode [
@@ -42,6 +42,8 @@ Add a `VectorKeyCode` and `VECTOR_KEY_VALUE`.
 
     // ...
     constexpr uint64_t VECTOR_KEY_VALUE = (((int)KeyCode::VectorKeyCode) << TAG_WIDTH) | (int)Tag::Key;
+
+    constexpr Cell VectorKeyValue{ .u64 = VECTOR_KEY_VALUE };
 ```
 
 Optionally add predicates:

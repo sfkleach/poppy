@@ -4,7 +4,7 @@ codeplanter.o: codeplanter.cpp itemizer.hpp item.hpp itemattrs.hpp \
  engine.hpp iscanner.hpp codeplanter.hpp
 engine.o: engine.cpp itemizer.hpp item.hpp itemattrs.hpp itemrole.hpp \
  cell.hpp layout.hpp heap.hpp mishap.hpp xroots.hpp engine.hpp \
- iscanner.hpp
+ iscanner.hpp gc.hpp
 gc.o: gc.cpp cell.hpp layout.hpp gc.hpp engine.hpp itemizer.hpp item.hpp \
  itemattrs.hpp itemrole.hpp heap.hpp mishap.hpp xroots.hpp iscanner.hpp
 heap.o: heap.cpp heap.hpp cell.hpp layout.hpp mishap.hpp

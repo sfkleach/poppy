@@ -34,15 +34,11 @@ namespace poppy {
         _working_limit = _block_start + kapacity / 2;
     }
 
-    CellRef Heap::popEnqueuedObject(Cell * & start, Cell * & end) {
+    CellRef Heap::popEnqueuedObject() {
         if (_scan_queue >= _working_tip) {
-            start = nullptr;
-            end = nullptr;
             return CellRef();
         } else {
-            CellRef object = nextObject(CellRef(_scan_queue));
-            object.boundaries(start, end);
-            return object;
+            return nextObject(CellRef(_scan_queue));
         }
     }
 
@@ -136,5 +132,32 @@ namespace poppy {
         }
         std::cout << std::endl;
     }
+
+    ObjectBuilder::ObjectBuilder(Heap & heap) : 
+        _heap(heap)
+    {
+    }
+
+    void ObjectBuilder::addCell(Cell cell) {
+        *_heap._working_tip++ = cell;
+    }
+
+    void ObjectBuilder::copyRange(Cell * start, Cell * end) {
+        _heap.copyRange(start, end);
+    }
+
+    void ObjectBuilder::addKey(Cell cell) {
+        _key = _heap._working_tip;
+        *_heap._working_tip++ = cell;
+    }
+
+    Cell * ObjectBuilder::object() {
+        return _key;
+    }
+
+    Cell * ObjectBuilder::lastPlanted() {
+        return _heap._working_tip;
+    }
+
 
 } // namespace poppy

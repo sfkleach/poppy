@@ -26,6 +26,7 @@ enum class Instruction {
     ADD,
     CALL_GLOBAL,
     CALL_LOCAL,
+    CALL_BUILTIN,
     GOTO,
     HALT,
     IFNOT,
@@ -99,6 +100,7 @@ public:
 
 public:
     Heap & getHeap() { return _runtime->_heap; }
+    void reserve(size_t n);
     std::map<std::string, RefIdent> & getDictionary() { return _runtime->_dictionary; }
     void declareGlobal(const std::string & name);
 
@@ -128,6 +130,11 @@ public:
     }
 
     void scanRoots(IScanner & scanner);
+
+public:
+    // Built-ins
+    static void sysConsVector(Engine * engine);
+    void consVector();
 };
 
 } // namespace poppy

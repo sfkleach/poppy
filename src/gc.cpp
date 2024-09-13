@@ -64,5 +64,10 @@ namespace poppy {
         }
     }
 
+    void GarbageCollector::expand(size_t ncells) {
+        // TODO:
+        throw Mishap("To be implemented");
+    }
+
 
 } // namespace poppy

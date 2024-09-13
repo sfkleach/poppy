@@ -16,6 +16,7 @@
 #include "layout.hpp"
 #include "xroots.hpp"
 #include "engine.hpp"
+#include "gc.hpp"
 
 namespace poppy {
 
@@ -36,6 +37,7 @@ namespace poppy {
             case Instruction::PUSH_LOCAL:        
             case Instruction::CALL_GLOBAL:
             case Instruction::CALL_LOCAL:
+            case Instruction::CALL_BUILTIN:
             case Instruction::GOTO:
             case Instruction::IFSO:
             case Instruction::IFNOT:
@@ -53,6 +55,7 @@ namespace poppy {
             case Instruction::ADD: return "ADD";
             case Instruction::CALL_GLOBAL: return "CALL_GLOBAL";
             case Instruction::CALL_LOCAL: return "CALL_LOCAL";
+            case Instruction::CALL_BUILTIN: return "CALL_BUILTIN";
             case Instruction::IFNOT: return "IFNOT";
             case Instruction::IFSO: return "IFSO";
             case Instruction::GOTO: return "GOTO";
@@ -82,6 +85,8 @@ namespace poppy {
         d[name] = ident;
     }
 
+    typedef void (*BuiltInFunction)(Engine * engine);
+
     void Engine::init_or_run(Cell * pc, bool init) {
         // In order to get the address-of-labels into a map we need to
         // have a separate initialisation pass, so that the labels are
@@ -91,6 +96,7 @@ namespace poppy {
                 {Instruction::ADD, &&L_ADD},
                 {Instruction::CALL_GLOBAL, &&L_CALL_GLOBAL},
                 {Instruction::CALL_LOCAL, &&L_CALL_LOCAL},
+                {Instruction::CALL_BUILTIN, &&L_CALL_BUILTIN},
                 {Instruction::IFNOT, &&L_IFNOT},
                 {Instruction::IFSO, &&L_IFSO},
                 {Instruction::GOTO, &&L_GOTO},
@@ -180,6 +186,12 @@ namespace poppy {
         L_CALL_LOCAL: {
             uint64_t n = pc++->u64;
             nextProcedure = *( &_callStack.back() - n );
+            goto *(pc++->ref);
+        }
+
+        L_CALL_BUILTIN: {
+            BuiltInFunction f = (BuiltInFunction)(pc++->ref);
+            f(this);
             goto *(pc++->ref);
         }
 
@@ -404,6 +416,49 @@ namespace poppy {
         for (auto & [name, ident] : _dictionary) {
             scanner.forwardRoot(ident->value());
         }
+    }
+
+    void Engine::reserve(size_t ncells) {
+        if (getHeap().capacity() < ncells) {
+            GarbageCollector collector(*this);
+            collector.gc();
+            if (getHeap().capacity() < ncells) {
+                collector.expand(ncells);       
+            }
+        }
+    }
+
+    void Engine::consVector() {
+        int L = _valueStack.size();
+        if (L == 0) 
+            throw Mishap("Stack underflow");
+
+        int N = _valueStack.back().getSmall();
+        if (N <= L)
+            throw Mishap("Too few items on stack to construct Vector");
+
+        // Reserve the correct amount of space in the heap, garbage collecting
+        // if needed.
+        this->reserve(N + 2);
+
+        // Now construct the new vector at the end of the heap.
+        ObjectBuilder objbuilder(getHeap());
+
+        objbuilder.addCell(Cell::makeSmall(N));
+        objbuilder.addCell(VectorKeyValue);
+        int start = L - N - 1;
+        int end = start + N;
+        for (int i = start; i < end; i++) {
+            objbuilder.addCell(_valueStack[i]);
+        }
+        
+        // And finally adjust the stack.
+        _valueStack.resize(L - N);
+        _valueStack.back() = *objbuilder.object();
+    }
+
+    void Engine::sysConsVector(Engine * engine) {
+        return engine->consVector();
     }
 
 } // namespace poppy

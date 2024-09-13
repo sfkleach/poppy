@@ -22,6 +22,7 @@ namespace poppy {
         size_t capacity() { return _block_end - _block_start; }
 
         friend class Builder;
+        friend class ObjectBuilder;
 
     public:
         void clear();
@@ -30,10 +31,24 @@ namespace poppy {
         Cell * blockStart() { return _block_start; }
         Cell * copyRange(Cell * start, Cell * end);
         void overwrite(const Heap & other);
-        CellRef popEnqueuedObject(Cell * & start, Cell * & end);
+        CellRef popEnqueuedObject();
 
     private:
         CellRef findKey(Cell * p);
+    };
+
+    class ObjectBuilder {
+    private:
+        Heap & _heap;
+        Cell * _key = nullptr;
+    public:
+        ObjectBuilder(Heap & heap);
+    public:
+        Cell * object();
+        void addCell(Cell cell);
+        void addKey(Cell cell);
+        void copyRange(Cell * start, Cell * end);
+        Cell * lastPlanted();
     };
 
     class Builder {
