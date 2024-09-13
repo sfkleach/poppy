@@ -165,7 +165,6 @@ namespace poppy {
         inline Cell procName() const { return cellRef[ProcedureLayout::ProcNameOffset]; }
         inline KeyCode keyCode() const { return static_cast<KeyCode>((cellRef->u64 >> TAG_WIDTH) & 0xFFFFFFFF); }
     public:
-        void showObject();
         void boundaries(Cell * & start, Cell * & end);
     };
 

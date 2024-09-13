@@ -1,6 +1,16 @@
 #ifndef LAYOUT_HPP
 #define LAYOUT_HPP
 
+/*
+    ProcName:       Symbol
+    QBlock:         Small
+    Length:         Small
+    Key:            Key
+    NumLocals:      u64
+    Instructions:   Vec< Cell >
+    QBlock:         Vec< int >          // probably should be sizedoff_t not int.
+*/
+
 class ProcedureLayout {
 public:
     static const int ProcNameOffset = -3;
