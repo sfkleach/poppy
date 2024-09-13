@@ -39,14 +39,14 @@ namespace poppy {
     // they are so common. This means that they can be tested with a simple
     // 8-bit mask. 
     enum class UpperTag {
-        False,              // 0000_0100 <- Unique Talse value. 56-bit payload not used!
-        True,               // 0000_1100 <- Unique True value. 56-bit payload not used!
-        Sentinel,           // 0001_0100 <- Sentinels. Other singleton constants.
-        Symbol              // 0001_1100 <- Symbols. 56-bit payload is an index into the symbol table.
+        False,              // 00000_100 <- Unique Talse value. 56-bit payload not used!
+        True,               // 00001_100 <- Unique True value. 56-bit payload not used!
+        Sentinel,           // 00010_100 <- Sentinels. Other singleton constants.
+        Symbol              // 00011_100 <- Symbols. 56-bit payload is an index into the symbol table.
     };
 
     constexpr uint64_t FALSE_VALUE = (static_cast<int>(UpperTag::False) << TAG_WIDTH) | static_cast<int>(Tag::Special);
-    constexpr uint64_t TRUE_VALUE  = (static_cast<int>(UpperTag::True) << TAG_WIDTH) | static_cast<int>(Tag::Small);
+    constexpr uint64_t TRUE_VALUE  = (static_cast<int>(UpperTag::True) << TAG_WIDTH) | static_cast<int>(Tag::Special);
 
     //  System keys
     enum class KeyCode {
@@ -54,11 +54,16 @@ namespace poppy {
         ProcedureKeyCode,       // 00001_011 <- Procedure key
         BooleanKeyCode,         // 00010_011 <- Boolean key
         IntKeyCode,             // 00011_011 <- Int vector key
-        SymbolCode,             // 00101_011 <- Symbol key
-        StringCode,             // 00110_011 <- String key
+        SymbolKeyCode,          // 00101_011 <- Symbol key
+        VectorKeyCode,          // 00110_011 <- Vector key
     };
 
+
+    constexpr uint64_t KEY_KEY_VALUE = (((int)KeyCode::ProcedureKeyCode) << TAG_WIDTH) | (int)Tag::Key;
     constexpr uint64_t PROCEDURE_KEY_VALUE = (((int)KeyCode::ProcedureKeyCode) << TAG_WIDTH) | (int)Tag::Key;
+    constexpr uint64_t BOOLEAN_KEY_VALUE = (((int)KeyCode::ProcedureKeyCode) << TAG_WIDTH) | (int)Tag::Key;
+    constexpr uint64_t SYMBOL_KEY_VALUE = (((int)KeyCode::ProcedureKeyCode) << TAG_WIDTH) | (int)Tag::Key;
+    constexpr uint64_t VECTOR_KEY_VALUE = (((int)KeyCode::VectorKeyCode) << TAG_WIDTH) | (int)Tag::Key;
 
 
     class Cell {
@@ -122,6 +127,15 @@ namespace poppy {
             return isTaggedPtr() && (deref()->u64 == PROCEDURE_KEY_VALUE);
         }
 
+        inline bool isVectorKey() const {
+            return u64 == VECTOR_KEY_VALUE;
+        }
+
+        inline bool isVector() const {
+            return isTaggedPtr() && (deref()->u64 == VECTOR_KEY_VALUE);
+        }
+
+
     public:
         inline int getSymbolIndex() const {
             return (u64 >> BOTH_WIDTH);
@@ -162,6 +176,7 @@ namespace poppy {
         inline bool isKey() const { return (cellRef->u64 & TAG_MASK) == static_cast<uint64_t>(Tag::Key); }
         inline KeyCode getKeyCode() const { return static_cast<KeyCode>((cellRef->u64 >> TAG_WIDTH) & 0xFFFFFFFF); }
         inline bool isProcedure() const { return cellRef->u64 == PROCEDURE_KEY_VALUE; }
+        inline bool isVector() const { return cellRef->u64 == VECTOR_KEY_VALUE; }
         inline Cell procName() const { return cellRef[ProcedureLayout::ProcNameOffset]; }
         inline KeyCode keyCode() const { return static_cast<KeyCode>((cellRef->u64 >> TAG_WIDTH) & 0xFFFFFFFF); }
     public:
@@ -180,7 +195,8 @@ namespace poppy {
     constexpr Cell FalseValue{ .u64 = FALSE_VALUE };
     constexpr Cell TrueValue{ .u64 = TRUE_VALUE };
     constexpr Cell ProcedureKeyValue{ .u64 = PROCEDURE_KEY_VALUE };
-    constexpr Cell BooleanKeyValue{ .u64 = (((int)KeyCode::BooleanKeyCode) << TAG_WIDTH) | (int)Tag::Key };
+    constexpr Cell BooleanKeyValue{ .u64 = BOOLEAN_KEY_VALUE };
+    constexpr Cell VectorKeyValue{ .u64 = VECTOR_KEY_VALUE };
 }
 
 #endif
