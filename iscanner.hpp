@@ -5,7 +5,7 @@ namespace poppy {
     class IScanner {
     public:
         virtual ~IScanner() {}
-        virtual void update(Cell & root) = 0;
+        virtual void forwardRoot(Cell & root) = 0;
     };
 } // namespace poppy
 

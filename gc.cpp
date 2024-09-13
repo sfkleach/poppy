@@ -14,7 +14,7 @@ namespace poppy {
         return offset_adjusted;
     }
 
-    void Scanner::update(Cell & root) {
+    void Scanner::forwardRoot(Cell & root) {
         if (root.isTaggedPtr()) {
             CellRef object(root.deref());
             if (object.isForwarded()) {
@@ -26,14 +26,14 @@ namespace poppy {
         }
     }
 
-    void Scanner::updateObject(CellRef object) {
+    void Scanner::scanObject(CellRef object) {
         switch (object.getKeyCode()) {
             case KeyCode::ProcedureKeyCode: {
                 int length = object.offset(ProcedureLayout::LengthOffset)->getSmall();
                 int qoffset = object.offset(ProcedureLayout::QBlockOffset)->getSmall();
                 for (int d = qoffset; d < length; d += 1) {
                     CellRef keyCell = object.offset(d);
-                    this->update(*(keyCell.cellRef));
+                    this->forwardRoot(*(keyCell.cellRef));
                 }              
                 break;
             }
@@ -51,7 +51,7 @@ namespace poppy {
             CellRef object = to_space.popEnqueuedObject();
             if (object.isNull())
                 break;
-            scanner.updateObject(object);
+            scanner.scanObject(object);
         }
     }
 

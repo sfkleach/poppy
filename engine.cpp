@@ -390,7 +390,7 @@ namespace poppy {
 
     void Engine::scanRoots(IScanner & scanner) {
         for (auto & cell : _valueStack) {
-            scanner.update(cell);
+            scanner.forwardRoot(cell);
         }
         // TODO: this is clearly wrong!
         for (auto & cell : _callStack) {
@@ -402,7 +402,7 @@ namespace poppy {
 
     void Runtime::scanRoots(IScanner & scanner) {
         for (auto & [name, ident] : _dictionary) {
-            scanner.update(ident->value());
+            scanner.forwardRoot(ident->value());
         }
     }
 

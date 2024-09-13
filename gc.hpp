@@ -20,9 +20,9 @@ namespace poppy {
         }
 
     public:
-        void update(Cell & root);
+        void forwardRoot(Cell & root);
 
-        void updateObject(CellRef object);
+        void scanObject(CellRef object);
 
         Cell * forwardObject(CellRef object);
 
