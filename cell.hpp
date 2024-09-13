@@ -22,8 +22,8 @@ namespace poppy {
         Key,                // 011 key value
         Special,            // 100 special literal value
         EvacuatedObject,    // 101 evacuated object (points to new location)
-        Unused,             // 110 free for any use
-        VisitedObject       // 111 visited object (61-bits remain, reset to 011)
+        Unused1,            // 110 free for any use
+        Unused2             // 111 free for any use
     };
 
     constexpr unsigned int UPPER_TAG_WIDTH = 5;
@@ -50,11 +50,12 @@ namespace poppy {
 
     //  System keys
     enum class KeyCode {
-        KeyKeyCode,             // 0000_0011 <- Key key
-        ProcedureKeyCode,       // 0000_1011 <- Procedure key
-        BooleanKeyCode,         // 0001_0011 <- Boolean key
-        IntKeyCode,             // 0001_1011 <- Int vector key
-        SymbolCode,             // 0010_1011 <- Symbol key
+        KeyKeyCode,             // 00000_011 <- Key key
+        ProcedureKeyCode,       // 00001_011 <- Procedure key
+        BooleanKeyCode,         // 00010_011 <- Boolean key
+        IntKeyCode,             // 00011_011 <- Int vector key
+        SymbolCode,             // 00101_011 <- Symbol key
+        StringCode,             // 00110_011 <- String key
     };
 
     constexpr uint64_t PROCEDURE_KEY_VALUE = (((int)KeyCode::ProcedureKeyCode) << TAG_WIDTH) | (int)Tag::Key;

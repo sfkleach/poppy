@@ -40,7 +40,6 @@ namespace poppy {
             end = nullptr;
             return CellRef();
         } else {
-
             CellRef object = nextObject(CellRef(_scan_queue));
             object.boundaries(start, end);
             return object;

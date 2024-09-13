@@ -2,6 +2,10 @@
 help:
     just --list
 
+# Run the poppy executable
+run: build
+    ./poppy
+
 # Build the poppy executable.
 build: _make_dependencies
     make poppy

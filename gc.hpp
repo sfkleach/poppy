@@ -20,29 +20,11 @@ namespace poppy {
         }
 
     public:
-        void update(Cell & root) {
-            if (root.isTaggedPtr()) {
-                CellRef object(root.deref());
-                if (object.isForwarded()) {
-                    root = Cell::makePtr(object->deref());
-                } else if (object.isTaggedPtr()) {
-                    Cell * new_location = forwardObject(object);
-                    root = Cell::makeForwarded(new_location);
-                }
-            }
-        }
+        void update(Cell & root);
 
         void updateObject(CellRef object);
 
-        Cell * forwardObject(CellRef object) {
-            Cell * start;
-            Cell * end;
-            object.boundaries(start, end);
-            Cell * new_start = _to_space.copyRange(start, end);
-            Cell * new_object = new_start + (object.cellRef - start);
-            Cell * offset_adjusted = new_object - _offset;
-            return offset_adjusted;
-        }
+        Cell * forwardObject(CellRef object);
 
         void copyBackSpace() {
             _from_space.overwrite(_to_space);
