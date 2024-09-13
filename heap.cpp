@@ -46,17 +46,26 @@ namespace poppy {
         }
     }
 
+    CellRef Heap::findKey(Cell * p) {
+        while (p < _working_tip) {
+            if (p->isKey())
+                return CellRef( p );
+            p += 1;
+        }
+        return CellRef();
+    }
+
     CellRef Heap::nextObject(CellRef keyCell) {
         switch (keyCell.keyCode()) {
             case KeyCode::ProcedureKeyCode: {
                 int length = keyCell.offset(ProcedureLayout::LengthOffset)->getSmall();
                 Cell * p = keyCell.cellRef + length;
-                while (p < _working_tip) {
-                    if (p->isKey())
-                        return CellRef( p );
-                    p += 1;
-                }
-                return CellRef();
+                return findKey(p);
+            }
+            case KeyCode::VectorKeyCode: {
+                int length = keyCell.offset(ProcedureLayout::LengthOffset)->getSmall();
+                Cell * p = keyCell.cellRef + length;
+                return findKey(p);
             }
             default:
                 throw Mishap("Unknown key").culprit("Key", static_cast<unsigned long>(keyCell->u64));
@@ -66,12 +75,7 @@ namespace poppy {
 
     CellRef Heap::firstObject() {
         Cell * p = _block_start;
-        while (p < _working_tip) {
-            if (p->isKey())
-                return CellRef(p);
-            p += 1;
-        }
-        return CellRef();
+        return findKey(p);
     }
 
     Cell * Heap::copyRange(Cell * start, Cell * end) {

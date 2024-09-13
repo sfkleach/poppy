@@ -31,6 +31,9 @@ namespace poppy {
         Cell * copyRange(Cell * start, Cell * end);
         void overwrite(const Heap & other);
         CellRef popEnqueuedObject(Cell * & start, Cell * & end);
+
+    private:
+        CellRef findKey(Cell * p);
     };
 
     class Builder {

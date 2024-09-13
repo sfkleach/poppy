@@ -37,6 +37,15 @@ namespace poppy {
                 }              
                 break;
             }
+            case KeyCode::VectorKeyCode: {
+                int length = object.offset(VectorLayout::LengthOffset)->getSmall();
+                int start = VectorLayout::ContentsOffset;
+                int end = VectorLayout::ContentsOffset + length;
+                for (int d = start; d < end; d += 1) {
+                    CellRef keyCell = object.offset(d);
+                    this->forwardRoot(*(keyCell.cellRef));
+                }     
+            }
             default:
                 // No action needed.
                 break;

@@ -59,10 +59,10 @@ namespace poppy {
     };
 
 
-    constexpr uint64_t KEY_KEY_VALUE = (((int)KeyCode::ProcedureKeyCode) << TAG_WIDTH) | (int)Tag::Key;
+    constexpr uint64_t KEY_KEY_VALUE = (((int)KeyCode::KeyKeyCode) << TAG_WIDTH) | (int)Tag::Key;
     constexpr uint64_t PROCEDURE_KEY_VALUE = (((int)KeyCode::ProcedureKeyCode) << TAG_WIDTH) | (int)Tag::Key;
-    constexpr uint64_t BOOLEAN_KEY_VALUE = (((int)KeyCode::ProcedureKeyCode) << TAG_WIDTH) | (int)Tag::Key;
-    constexpr uint64_t SYMBOL_KEY_VALUE = (((int)KeyCode::ProcedureKeyCode) << TAG_WIDTH) | (int)Tag::Key;
+    constexpr uint64_t BOOLEAN_KEY_VALUE = (((int)KeyCode::BooleanKeyCode) << TAG_WIDTH) | (int)Tag::Key;
+    constexpr uint64_t SYMBOL_KEY_VALUE = (((int)KeyCode::SymbolKeyCode) << TAG_WIDTH) | (int)Tag::Key;
     constexpr uint64_t VECTOR_KEY_VALUE = (((int)KeyCode::VectorKeyCode) << TAG_WIDTH) | (int)Tag::Key;
 
 

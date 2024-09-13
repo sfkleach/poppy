@@ -27,6 +27,12 @@ namespace poppy {
                 end = cellRef + length;
                 break;
             }
+            case KeyCode::VectorKeyCode: {
+                int length = this->offset(VectorLayout::LengthOffset)->getSmall();
+                start = cellRef - VectorLayout::KeyOffsetFromStart;
+                end = cellRef + length;
+                break;
+            }
             default:
                 throw std::runtime_error("Unknown key code");
         }
